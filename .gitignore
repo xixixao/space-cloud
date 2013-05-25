@@ -21,6 +21,9 @@ what
 /public
 /dist
 
+# Ignore db
+/db
+
 # Numerous always-ignore extensions
 *~
 *.diff

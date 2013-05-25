@@ -48,24 +48,24 @@ Database for users:
 
 
     courseSchema = mongoose.Schema(name: String, courseCode: Number)
-    userSchema = mongoose.Schema(name: String, courses: [courseSchema])
-
     Course = mongoose.model('Course', courseSchema)
+    userSchema = mongoose.Schema(name: String, courses: [Course])
+
+    
     User = mongoose.model('User', userSchema)
 
-
-    courses = for i in [0..3]
+    modules = for i in [0..3]
       course = new Course name: "course #{i}", courseCode: i
       course.save (err, course) -> 
         if err 
           console.error err
-
 
     users = for i in [0..10]
       user = new User name: "user #{i}"
       user.save (err, users) ->
         if err 
           console.error err
+
 
     User.find (err, users) -> 
       console.log users.length
@@ -75,23 +75,16 @@ Database for users:
 
 
 
- 
-
-
-
-
-
-
-
-
     app.get '/users', (request, response) ->
       response.send users
 
     app.get '/users/:name', (request, response) ->
-      for user in users
-        if user.id is request.params.name
-          response.send user
-          break
+      User.find name: request.params.name, (err, docs) ->
+        response.send docs 
+      
+
+      
+
 
     app.put '/client/create-form', (request, response) ->
       res.writeHead 200, 'Content-Type': 'text/plain'

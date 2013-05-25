@@ -37,6 +37,7 @@ Database for users:
 
     mongoose = require 'mongoose'
     mongoose.connect "mongodb://localhost/test"
+    Schema = mongoose.Schema
     
     db = mongoose.connection
 
@@ -45,14 +46,17 @@ Database for users:
     db.once "open", ->
       console.log "success"
 
+    
 
+    courseSchema = Schema(name: String, courseCode: Number)
+    userSchema = Schema(name: String, courses: [{type: Schema.Types.ObjectId, ref: 'Course'}])
 
-    courseSchema = mongoose.Schema(name: String, courseCode: Number)
     Course = mongoose.model('Course', courseSchema)
-    userSchema = mongoose.Schema(name: String, courses: [Course])
-
     
     User = mongoose.model('User', userSchema)
+
+    #for n, collection of db.collections
+    #  collection.drop -> console.log "dropped"
 
     modules = for i in [0..3]
       course = new Course name: "course #{i}", courseCode: i
@@ -61,19 +65,21 @@ Database for users:
           console.error err
 
     users = for i in [0..10]
-      user = new User name: "user #{i}"
+      user = new User name: "user#{i}"
+      console.log modules 
+      for j in [0..3]
+        user.courses.addToSet modules[j]._id
       user.save (err, users) ->
         if err 
           console.error err
-
+   
 
     User.find (err, users) -> 
       console.log users.length
 
     Course.find (err, courses) -> 
       console.log courses.length
-
-
+    
 
     app.get '/users', (request, response) ->
       response.send users
@@ -81,14 +87,11 @@ Database for users:
     app.get '/users/:name', (request, response) ->
       User.find name: request.params.name, (err, docs) ->
         response.send docs 
-      
-
-      
-
 
     app.put '/client/create-form', (request, response) ->
       res.writeHead 200, 'Content-Type': 'text/plain'
       res.end JSON.stringify list
+
 
 
 

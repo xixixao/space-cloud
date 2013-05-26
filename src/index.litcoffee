@@ -1,6 +1,11 @@
 This is our backend server.
 
+    mongoose = require 'mongoose'
     express = require 'express'
+    Q = require 'q'
+    (require './q-each') Q
+
+
     app = express()
 
     port = 3333
@@ -33,12 +38,11 @@ Database for users:
     #     name: "Cruz"
     #     year: 2011
     #     uri: "/users/pamela"
-    # ] 
+    # ]
 
-    mongoose = require 'mongoose'
     mongoose.connect "mongodb://localhost/test"
     Schema = mongoose.Schema
-    
+
     db = mongoose.connection
 
     db.on "error", ->
@@ -46,47 +50,46 @@ Database for users:
     db.once "open", ->
       console.log "success"
 
-    
+
 
     courseSchema = Schema(name: String, courseCode: Number)
     userSchema = Schema(name: String, courses: [{type: Schema.Types.ObjectId, ref: 'Course'}])
 
     Course = mongoose.model('Course', courseSchema)
-    
     User = mongoose.model('User', userSchema)
 
-    #for n, collection of db.collections
-    #  collection.drop -> console.log "dropped"
+    wiped = Q.map db.collections, (collection) ->
+      Q.invoke collection, 'drop'
 
-    modules = for i in [0..3]
-      course = new Course name: "course #{i}", courseCode: i
-      course.save (err, course) -> 
-        if err 
-          console.error err
+    wiped.then ->
+      User.find (err, users) ->
+        console.log "Number of users #{users.length}"
 
-    users = for i in [0..10]
-      user = new User name: "user#{i}"
-      console.log modules 
-      for j in [0..3]
-        user.courses.addToSet modules[j]._id
-      user.save (err, users) ->
-        if err 
-          console.error err
-   
+      Course.find (err, courses) ->
+        console.log "Number of users #{courses.length}"
 
-    User.find (err, users) -> 
-      console.log users.length
+#    modules = Q.map [0..3], (i) ->
+#      course = new Course name: "course #{i}", courseCode: i
+#      Q.ninvoke course, 'save'
+#
+#    users = for i in [0..10]
+#      user = new User name: "user#{i}"
+#      modules.thenEach (module) ->
+#        console.log module
+#        user.courses.addToSet module._id
+#      user.save (err, users) ->
+#        if err
+#          console.error err
 
-    Course.find (err, courses) -> 
-      console.log courses.length
     
+
 
     app.get '/users', (request, response) ->
       response.send users
 
     app.get '/users/:name', (request, response) ->
       User.find name: request.params.name, (err, docs) ->
-        response.send docs 
+        response.send docs
 
     app.put '/client/create-form', (request, response) ->
       res.writeHead 200, 'Content-Type': 'text/plain'

@@ -4,7 +4,7 @@
   "dependencies": {
     "express": "*",
   	"mongoose": "*",
-  	"async": "*"
+  	"q": "*"
   },
   "devDependencies": {
     "coffee-script": "*"

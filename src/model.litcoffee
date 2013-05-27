@@ -18,12 +18,15 @@ We define our models, with appropriate schemas,
 
       courseSchema = Schema
         name: String
-        courseCode: Number
+        courseCode: {type: Number, unique: true}
       Course = mongoose.model('Course', courseSchema)
 
       userSchema = Schema
         name: String
+        login: {type: String, unique: true}
+        password: String
         courses: [type: Schema.Types.ObjectId, ref: 'Course']
+
       User = mongoose.model('User', userSchema)
 
       {Course, User}
@@ -48,13 +51,12 @@ We connect to our test database and erase it.
     wipe = ->
       db = mongoose.connection
       Q.map db.collections, (collection) ->
-        Q.invoke collection, 'drop'
+        Q.ninvoke collection, 'drop'
 
 
 For testing purposes, we fill in the database. We create couple courses,
 
     populate = ({Course, User})->
-
       courses = Q.map [0..3], (i) ->
         course = new Course
           name: "course #{i}"
@@ -87,14 +89,5 @@ Check contents of the database.
 And execute everything in correct synchronized order. Node will take care of executing this only once.
 
     connect()
-    wipe().then ->
-      console.log "After wiping out"
-      printStats models
-    .then ->
-      populate models
-    .then ->
-      console.log "After populating"
-      printStats models
-    .done()
-
+    wipe()
 

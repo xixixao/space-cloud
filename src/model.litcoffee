@@ -28,12 +28,13 @@ We define our models, with appropriate schemas,
         courses: [type: Schema.Types.ObjectId, ref: 'Course']
       User = mongoose.model('User', userSchema)
 
-
       questionSchema = Schema
         _id: {type:String, unique: true} #question id
         timestamp: {type: Date, default: Date.now}
         owner: [type: Schema.Types.ObjectId, ref: 'User']
         feeds: [type: Schema.Types.ObjectId, ref: 'Feed']
+        file: [type: Schema.Types.ObjectId, ref: 'File']
+        filePosition: String
       Question = mongoose.model('Question', questionSchema)
 
       feedSchema = Schema
@@ -42,7 +43,13 @@ We define our models, with appropriate schemas,
         owner: [type: Schema.Types.ObjectId, ref: 'User']
       Feed = mongoose.model('Feed', feedSchema)        
 
-      {Course, User, Question, Feed}
+      fileSchema = Schema
+        _id: {type:String, unique: true} #file id
+        path: String
+        fileName: String
+      File = mongoose.model('File', fileSchema)                
+
+      {Course, User, Question, Feed, File}
 
 and export them.
 

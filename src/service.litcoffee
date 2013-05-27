@@ -7,7 +7,7 @@ This is the definition of our service, via a RESTful API.
 -----
 
       app.get '/users/:login', (request, response) ->
-        User.find login: request.params.login, (err, docs) ->
+        User.find username: request.params.login, (err, docs) ->
           response.send docs
 
 -----
@@ -15,7 +15,7 @@ This is the definition of our service, via a RESTful API.
       app.post '/users', (request, response) ->
         user = new User
           name: request.body.name
-          login: request.body.login 
+          username: request.body.username 
           password: request.body.password
         user.save (err) ->
           if err?
@@ -26,13 +26,47 @@ This is the definition of our service, via a RESTful API.
 -----
 
       app.post '/login', (request, response) ->
-        User.findOne login: request.body.login, (err, user) ->
+        User.findOne username: request.body.username, (err, user) ->
           if err?
             response.send err 
           else
-            console.log user
-            console.log request.body.password
             if user.password != request.body.password
               response.send "error"
             else
               response.send "ok" 
+
+-----
+
+      app.post '/courses', (request, response) ->
+        course = new Course
+          name: request.body.name
+          code: request.body.code
+        course.save (err) ->
+          if err?
+            response.send err 
+          else
+            response.send course
+
+-----
+
+      app.get '/courses/:code', (request, response) ->
+        Course.find code: request.params.code, (err, docs) ->
+          response.send docs
+
+-----
+
+      app.post '/users/:login', (request, response) ->
+        User.findOne username: request.params.login, (err, user) ->
+          if err?
+            response.send err 
+          else
+            course = request.body.courses
+            #console.log courses
+            #for course in courses
+            user.courses.addToSet course
+            response.send "ok"
+
+
+
+
+

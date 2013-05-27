@@ -18,18 +18,31 @@ We define our models, with appropriate schemas,
 
       courseSchema = Schema
         name: String
-        code: {type: String, unique: true}
+        _id: {type: String, unique: true}
       Course = mongoose.model('Course', courseSchema)
 
       userSchema = Schema
         name: String
-        username: {type: String, unique: true}
+        _id: {type: String, unique: true}
         password: String
         courses: [type: Schema.Types.ObjectId, ref: 'Course']
-
       User = mongoose.model('User', userSchema)
 
-      {Course, User}
+
+      questionSchema = Schema
+        _id: {type:String, unique: true} #question id
+        timestamp: {type: Date, default: Date.now}
+        owner: [type: Schema.Types.ObjectId, ref: 'User']
+        feeds: [type: Schema.Types.ObjectId, ref: 'Feed']
+      Question = mongoose.model('Question', questionSchema)
+
+      feedSchema = Schema
+        _id: {type:String, unique: true} #feed id
+        timestamp: {type: Date, default: Date.now}
+        owner: [type: Schema.Types.ObjectId, ref: 'User']
+      Feed = mongoose.model('Feed', feedSchema)        
+
+      {Course, User, Question, Feed}
 
 and export them.
 
@@ -60,7 +73,7 @@ For testing purposes, we fill in the database. We create couple courses,
       courses = Q.map [0..3], (i) ->
         course = new Course
           name: "course #{i}"
-          code: i
+          _id: i
         course.save()
 
 and couple users and assign each course to every user.

@@ -28,28 +28,29 @@ We define our models, with appropriate schemas,
         courses: [type: Schema.Types.ObjectId, ref: 'Course']
       User = mongoose.model('User', userSchema)
 
+      fileSchema = Schema
+        _id: {type: String, unique: true} #file id
+        path: String
+        name: String
+        owner: {type: Schema.Types.ObjectId, ref: 'User'}
+        questions: [type: Schema.Types.ObjectId, ref: 'Question']
+      File = mongoose.model('File', fileSchema)     
+                 
       questionSchema = Schema
         _id: {type:String, unique: true} #question id
         timestamp: {type: Date, default: Date.now}
-        owner: [type: Schema.Types.ObjectId, ref: 'User']
+        owner: {type: Schema.Types.ObjectId, ref: 'User'}
         feeds: [type: Schema.Types.ObjectId, ref: 'Feed']
-        file: [type: Schema.Types.ObjectId, ref: 'File']
         filePosition: String
       Question = mongoose.model('Question', questionSchema)
 
       feedSchema = Schema
         _id: {type:String, unique: true} #feed id
         timestamp: {type: Date, default: Date.now}
-        owner: [type: Schema.Types.ObjectId, ref: 'User']
+        owner: {type: Schema.Types.ObjectId, ref: 'User'}
       Feed = mongoose.model('Feed', feedSchema)        
 
-      fileSchema = Schema
-        _id: {type:String, unique: true} #file id
-        path: String
-        fileName: String
-      File = mongoose.model('File', fileSchema)                
-
-      {Course, User, Question, Feed, File}
+      {Course, User, File, Question, Feed}
 
 and export them.
 

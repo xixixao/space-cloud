@@ -1,6 +1,6 @@
 This is the definition of our service, via a RESTful API.
 
-    {Course, User} = require './model'
+    {Course, User, File, Feed, Question} = require './model'
 
     module.exports = (app) ->
 
@@ -68,5 +68,44 @@ This is the definition of our service, via a RESTful API.
 
 
 
+--------
 
+      app.post '/files', (request, response) ->
+        file = new File
+          _id: request.body._id
+          path: request.body.path
+          name: request.body.name
+          owner: request.body.owner
+        file.save (err) ->
+          if err?
+            response.send err 
+          else
+            response.send file
+----------
+
+
+      app.post '/questions', (request, response) ->
+        question = new Question
+          _id: request.body._id
+          owner: request.body.owner
+          filePosition: request.body.filePosition
+        question.save (err) ->
+          if err?
+            response.send err 
+          else
+            response.send question
+
+-----------
+
+      app.post '/feeds', (request, response) ->
+        feed = new Feed
+          _id: request.body._id
+          owner: request.body.owner      
+        feed.save (err) ->
+          if err?
+            response.send err 
+          else
+            response.send feed
+
+-----------
 

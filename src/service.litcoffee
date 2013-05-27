@@ -10,7 +10,9 @@ This is the definition of our service, via a RESTful API.
         User.find _id: request.params.login, (err, docs) ->
           response.send docs
 
------
+----------------------
+Adds a user to the DB
+----------------------
 
       app.post '/users', (request, response) ->
         user = new User
@@ -23,7 +25,9 @@ This is the definition of our service, via a RESTful API.
           else
             response.send user
 
------
+----------------
+Login validation
+----------------
 
       app.post '/login', (request, response) ->
         User.findOne _id: request.body._id, (err, user) ->
@@ -35,7 +39,9 @@ This is the definition of our service, via a RESTful API.
             else
               response.send "ok" 
 
------
+-----------------------
+Adds a course to the DB
+-----------------------
 
       app.post '/courses', (request, response) ->
         course = new Course
@@ -47,13 +53,17 @@ This is the definition of our service, via a RESTful API.
           else
             response.send course
 
------
+-------------------------------------------
+Retrieves a course from the DB with id code
+-------------------------------------------
 
       app.get '/courses/:code', (request, response) ->
         Course.find _id: request.params.code, (err, docs) ->
           response.send docs
 
------
+---------------------------------------------------
+Adds a list of courses to the user with login given
+---------------------------------------------------
 
       app.post '/users/:login', (request, response) ->
         User.findOne _id: request.params.login, (err, user) ->

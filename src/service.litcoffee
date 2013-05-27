@@ -7,7 +7,7 @@ This is the definition of our service, via a RESTful API.
 -----
 
       app.get '/users/:login', (request, response) ->
-        User.find username: request.params.login, (err, docs) ->
+        User.find _id: request.params.login, (err, docs) ->
           response.send docs
 
 -----
@@ -15,7 +15,7 @@ This is the definition of our service, via a RESTful API.
       app.post '/users', (request, response) ->
         user = new User
           name: request.body.name
-          username: request.body.username 
+          _id: request.body._id 
           password: request.body.password
         user.save (err) ->
           if err?
@@ -26,7 +26,7 @@ This is the definition of our service, via a RESTful API.
 -----
 
       app.post '/login', (request, response) ->
-        User.findOne username: request.body.username, (err, user) ->
+        User.findOne _id: request.body._id, (err, user) ->
           if err?
             response.send err 
           else
@@ -40,7 +40,7 @@ This is the definition of our service, via a RESTful API.
       app.post '/courses', (request, response) ->
         course = new Course
           name: request.body.name
-          code: request.body.code
+          _id: request.body._id
         course.save (err) ->
           if err?
             response.send err 
@@ -50,21 +50,21 @@ This is the definition of our service, via a RESTful API.
 -----
 
       app.get '/courses/:code', (request, response) ->
-        Course.find code: request.params.code, (err, docs) ->
+        Course.find _id: request.params.code, (err, docs) ->
           response.send docs
 
 -----
 
       app.post '/users/:login', (request, response) ->
-        User.findOne username: request.params.login, (err, user) ->
+        User.findOne _id: request.params.login, (err, user) ->
           if err?
             response.send err 
           else
-            course = request.body.courses
+            courses = request.body.courses
             #console.log courses
-            #for course in courses
-            user.courses.addToSet course
-            response.send "ok"
+            for course in courses
+              user.courses.addToSet course
+            response.send user
 
 
 

@@ -18,12 +18,12 @@ We define our models, with appropriate schemas,
 
       courseSchema = Schema
         name: String
-        code: {type: String, unique: true}
+        _id: {type: String, unique: true}
       Course = mongoose.model('Course', courseSchema)
 
       userSchema = Schema
         name: String
-        username: {type: String, unique: true}
+        _id: {type: String, unique: true}
         password: String
         courses: [type: Schema.Types.ObjectId, ref: 'Course']
 
@@ -60,7 +60,7 @@ For testing purposes, we fill in the database. We create couple courses,
       courses = Q.map [0..3], (i) ->
         course = new Course
           name: "course #{i}"
-          code: i
+          _id: i
         course.save()
 
 and couple users and assign each course to every user.

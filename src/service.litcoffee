@@ -96,6 +96,7 @@ Creates and saves a new file to the DB
           path: request.body.path
           name: request.body.name
           owner: request.body.owner
+          course: request.body.course
         file.save (err) ->
           if err?
             response.send err 

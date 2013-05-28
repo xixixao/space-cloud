@@ -1,6 +1,6 @@
 This is the definition of our service, via a RESTful API.
 
-    {Course, User, File, Comment, Question} = require './model'
+    {Course, User, File, CommentA, CommentQ, Question, Answer} = require './model'
 
     module.exports = (app) ->
 
@@ -140,12 +140,42 @@ Retrieves a question from the DB with id code
           else
             response.send docs
 
------------------------------------------
-Creates and saves a new comment to the DB
------------------------------------------
 
-      app.post '/comments', (request, response) ->
-        comment = new Comment
+
+------------------------------------------
+Creates and saves a new answer to the DB
+------------------------------------------
+
+      app.post '/answers', (request, response) ->
+        answer = new Answer
+          _id: request.body._id
+          owner: request.body.owner
+          question: request.body.question
+          rank: request.body.rank
+        answer.save (err) ->
+          if err?
+            response.send err 
+          else
+            response.send answer
+
+-------------------------------------------
+Retrieves an answer from the DB with id code
+-------------------------------------------
+
+      app.get '/answers/:code', (request, response) ->
+        Answer.find _id: request.params.code, (err, docs) ->
+          if err?
+            response.send "not found"
+          else
+            response.send docs
+
+
+-------------------------------------------------------
+Creates and saves a new comment to a question to the DB
+-------------------------------------------------------
+
+      app.post '/commentsQ', (request, response) ->
+        comment = new CommentQ
           _id: request.body._id
           owner: request.body.owner   
           question: request.body.question   
@@ -155,16 +185,43 @@ Creates and saves a new comment to the DB
           else
             response.send comment
 
--------------------------------------------
-Retrieves a comment from the DB with id code
--------------------------------------------
+------------------------------------------------------------
+Retrieves a comment from a question from the DB with id code
+------------------------------------------------------------
 
-      app.get '/comments/:code', (request, response) ->
-        Comment.find _id: request.params.code, (err, docs) ->
+      app.get '/commentsQ/:code', (request, response) ->
+        CommentQ.find _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
           else
             response.send docs
+
+
+-------------------------------------------------------
+Creates and saves a new comment to an answer to the DB
+-------------------------------------------------------
+
+      app.post '/commentsA', (request, response) ->
+        comment = new CommentA
+          _id: request.body._id
+          owner: request.body.owner   
+          answer: request.body.answer   
+        comment.save (err) ->
+          if err?
+            response.send err 
+          else
+            response.send comment
+
+------------------------------------------------------------
+Retrieves a comment from an answer from the DB with id code
+------------------------------------------------------------
+
+      app.get '/commentsA/:code', (request, response) ->
+        CommentA.find _id: request.params.code, (err, docs) ->
+          if err?
+            response.send "not found"
+          else
+            response.send docs            
 
 
 

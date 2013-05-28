@@ -47,14 +47,30 @@ We define our models, with appropriate schemas,
         file: {type: String, ref: 'File'}
       Question = mongoose.model('Question', questionSchema)
 
-      commentSchema = Schema
+      answerSchema = Schema
+        _id: {type:String, unique: true} 
+        timestamp: {type: Date, default: Date.now}
+        owner: {type: String, ref: 'User'}
+        question: {type: String, ref: 'Question'}
+        rank : Number
+      Answer = mongoose.model('Answer', answerSchema)
+
+
+      commentQSchema = Schema
         _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         question: {type: String, ref: 'Question'}
-      Comment = mongoose.model('Comment', commentSchema)        
+      CommentQ = mongoose.model('CommentQ', commentQSchema)       
 
-      {Course, User, File, Question, Comment}
+      commentASchema = Schema
+        _id: {type:String, unique: true} #comment id
+        timestamp: {type: Date, default: Date.now}
+        owner: {type: String, ref: 'User'}
+        answer: {type: String, ref: 'Answer'}
+      CommentA = mongoose.model('CommentA', commentASchema)    
+
+      {Course, User, File, Question, CommentA, CommentQ, Answer}
 
 and export them.
 

@@ -6,7 +6,7 @@ Backend service for Space
 How to run
 ----------
 
-You need to have `mongod` running. It needs a directory, so ideally have on in your folder with **Cloud**
+You need to have `mongod` running. It needs a directory, so ideally have one in your folder with **Cloud**
 
 ```bash
 cd cloud

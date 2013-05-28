@@ -21,11 +21,15 @@ We define our models, with appropriate schemas,
         _id: {type: String, unique: true}
       Course = mongoose.model('Course', courseSchema)
 
+      coursePermission = Schema
+        code: {type: String, ref: 'Course'}
+        permission: String
+
       userSchema = Schema
         name: String
         _id: {type: String, unique: true}
         password: String
-        courses: [type: String, ref: 'Course']
+        courses: [coursePermission]
       User = mongoose.model('User', userSchema)
 
       fileSchema = Schema

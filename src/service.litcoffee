@@ -86,7 +86,6 @@ Adds a list of courses to the user with login given
             response.send user
 
 
-
 --------------------------------------
 Creates and saves a new file to the DB
 --------------------------------------
@@ -105,6 +104,7 @@ Creates and saves a new file to the DB
 
 ------------------------------------------
 Creates and saves a new question to the DB
+Adds the question to the given file
 ------------------------------------------
 
       app.post '/questions', (request, response) ->
@@ -116,6 +116,7 @@ Creates and saves a new question to the DB
           if err?
             response.send err 
           else
+          	request.body.file.questions.addToSet question._id 
             response.send question
 
 -----------------------------------------

@@ -25,29 +25,29 @@ We define our models, with appropriate schemas,
         name: String
         _id: {type: String, unique: true}
         password: String
-        courses: [type: Schema.Types.ObjectId, ref: 'Course']
+        courses: [type: String, ref: 'Course']
       User = mongoose.model('User', userSchema)
 
       fileSchema = Schema
         _id: {type: String, unique: true} #file id
         path: String
         name: String
-        owner: {type: Schema.Types.ObjectId, ref: 'User'}
-        questions: [type: Schema.Types.ObjectId, ref: 'Question']
+        owner: {type: String, ref: 'User'}
       File = mongoose.model('File', fileSchema)     
                  
       questionSchema = Schema
         _id: {type:String, unique: true} #question id
         timestamp: {type: Date, default: Date.now}
-        owner: {type: Schema.Types.ObjectId, ref: 'User'}
-        comments: [type: Schema.Types.ObjectId, ref: 'Comment']
+        owner: {type: String, ref: 'User'}
         filePosition: String
+        file: {type: String, ref: 'File'}
       Question = mongoose.model('Question', questionSchema)
 
       commentSchema = Schema
         _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
-        owner: {type: Schema.Types.ObjectId, ref: 'User'}
+        owner: {type: String, ref: 'User'}
+        question: {type: String, ref: 'Question'}
       Comment = mongoose.model('Comment', commentSchema)        
 
       {Course, User, File, Question, Comment}

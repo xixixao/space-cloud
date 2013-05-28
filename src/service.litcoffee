@@ -102,9 +102,19 @@ Creates and saves a new file to the DB
           else
             response.send file
 
+-------------------------------------------
+Retrieves a file from the DB with id code
+-------------------------------------------
+
+      app.get '/files/:code', (request, response) ->
+        File.find _id: request.params.code, (err, docs) ->
+          if err?
+            response.send "not found"
+          else
+            response.send docs   
+
 ------------------------------------------
 Creates and saves a new question to the DB
-Adds the question to the given file
 ------------------------------------------
 
       app.post '/questions', (request, response) ->
@@ -112,12 +122,23 @@ Adds the question to the given file
           _id: request.body._id
           owner: request.body.owner
           filePosition: request.body.filePosition
+          file: request.body.file
         question.save (err) ->
           if err?
             response.send err 
           else
-          	request.body.file.questions.addToSet question._id 
             response.send question
+
+-------------------------------------------
+Retrieves a question from the DB with id code
+-------------------------------------------
+
+      app.get '/questions/:code', (request, response) ->
+        Question.find _id: request.params.code, (err, docs) ->
+          if err?
+            response.send "not found"
+          else
+            response.send docs
 
 -----------------------------------------
 Creates and saves a new comment to the DB
@@ -126,12 +147,24 @@ Creates and saves a new comment to the DB
       app.post '/comments', (request, response) ->
         comment = new Comment
           _id: request.body._id
-          owner: request.body.owner      
+          owner: request.body.owner   
+          question: request.body.question   
         comment.save (err) ->
           if err?
             response.send err 
           else
             response.send comment
+
+-------------------------------------------
+Retrieves a comment from the DB with id code
+-------------------------------------------
+
+      app.get '/comments/:code', (request, response) ->
+        Comment.find _id: request.params.code, (err, docs) ->
+          if err?
+            response.send "not found"
+          else
+            response.send docs
 
 
 

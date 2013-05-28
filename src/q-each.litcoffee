@@ -8,8 +8,8 @@ thenEach is an instance method on promises returned by Q.all. It provides a shor
 
       Q.makePromise::thenEach = (callback) ->
         @then (values) ->
-          for value in values
-            callback value
+          for value, i in values
+            callback value, i
 
       Q.map = (values, callback) ->
         if Array.isArray values

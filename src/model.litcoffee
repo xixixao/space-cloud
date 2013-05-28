@@ -27,13 +27,13 @@ We define our models, with appropriate schemas,
 
       userSchema = Schema
         name: String
-        _id: {type: String, unique: true}
+        _id: {type: String, unique: true, dropDups: true}
         password: String
         courses: [coursePermission]
       User = mongoose.model('User', userSchema)
 
       fileSchema = Schema
-        _id: {type: String, unique: true} #file id
+        _id: {type: String, unique: true} # course._id-fileid
         path: String
         name: String
         owner: {type: String, ref: 'User'}

@@ -1,5 +1,7 @@
 This is the definition of our service, via a RESTful API.
 
+    Q = require 'q'
+    (require './q-each') Q
     {Course, User, File, CommentA, CommentQ, Question, Answer} = require './model'
 
     module.exports = (app) ->
@@ -9,11 +11,22 @@ Finds a user with a given login and returns the details
 -------------------------------------------------------
 
       app.get '/users/:login', (request, response) ->
-        User.find _id: request.params.login, (err, docs) ->
+        User.findOne _id: request.params.login, (err, user) ->
           if err?
             response.send err 
           else
-            response.send docs
+            user.populate 'courses.code', (err, user) ->
+              user = user.toObject()
+
+              coursePermissions = user.courses
+              files = Q.map coursePermissions, ({code}) ->
+                courseId = code._id
+                Q.ninvoke File, 'find', course: courseId
+
+              files.thenEach (files, i) ->
+                user.courses[i].code.files = files
+                response.send user
+              .done()
 
 ----------------------
 Adds a user to the DB
@@ -24,6 +37,7 @@ Adds a user to the DB
           name: request.body.name
           _id: request.body._id 
           password: request.body.password
+          courses: request.body.courses
         user.save (err) ->
           if err?
             response.send err 
@@ -63,7 +77,7 @@ Retrieves a course from the DB with id code
 -------------------------------------------
 
       app.get '/courses/:code', (request, response) ->
-        Course.find _id: request.params.code, (err, docs) ->
+        Course.findOne _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
           else
@@ -80,7 +94,6 @@ Adds a list of courses to the user with login given
             response.send err 
           else
             courses = request.body.courses
-            #console.log courses
             for course in courses
               user.courses.addToSet course
             response.send user
@@ -108,7 +121,7 @@ Retrieves a file from the DB with id code
 -------------------------------------------
 
       app.get '/files/:code', (request, response) ->
-        File.find _id: request.params.code, (err, docs) ->
+        File.findOne _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
           else
@@ -135,7 +148,7 @@ Retrieves a question from the DB with id code
 -------------------------------------------
 
       app.get '/questions/:code', (request, response) ->
-        Question.find _id: request.params.code, (err, docs) ->
+        Question.findOne _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
           else
@@ -164,7 +177,7 @@ Retrieves an answer from the DB with id code
 -------------------------------------------
 
       app.get '/answers/:code', (request, response) ->
-        Answer.find _id: request.params.code, (err, docs) ->
+        Answer.findOne _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
           else

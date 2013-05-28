@@ -1,14 +1,19 @@
 This is the definition of our service, via a RESTful API.
 
-    {Course, User, File, Feed, Question} = require './model'
+    {Course, User, File, Comment, Question} = require './model'
 
     module.exports = (app) ->
 
------
+-------------------------------------------------------
+Finds a user with a given login and returns the details
+-------------------------------------------------------
 
       app.get '/users/:login', (request, response) ->
         User.find _id: request.params.login, (err, docs) ->
-          response.send docs
+          if err?
+            response.send err 
+          else
+            response.send docs
 
 ----------------------
 Adds a user to the DB
@@ -59,7 +64,11 @@ Retrieves a course from the DB with id code
 
       app.get '/courses/:code', (request, response) ->
         Course.find _id: request.params.code, (err, docs) ->
-          response.send docs
+          if err?
+            response.send "not found"
+          else
+          	response.send docs
+
 
 ---------------------------------------------------
 Adds a list of courses to the user with login given
@@ -78,7 +87,9 @@ Adds a list of courses to the user with login given
 
 
 
---------
+--------------------------------------
+Creates and saves a new file to the DB
+--------------------------------------
 
       app.post '/files', (request, response) ->
         file = new File
@@ -91,8 +102,10 @@ Adds a list of courses to the user with login given
             response.send err 
           else
             response.send file
-----------
 
+------------------------------------------
+Creates and saves a new question to the DB
+------------------------------------------
 
       app.post '/questions', (request, response) ->
         question = new Question
@@ -105,17 +118,19 @@ Adds a list of courses to the user with login given
           else
             response.send question
 
------------
+-----------------------------------------
+Creates and saves a new comment to the DB
+-----------------------------------------
 
-      app.post '/feeds', (request, response) ->
-        feed = new Feed
+      app.post '/comments', (request, response) ->
+        comment = new Comment
           _id: request.body._id
           owner: request.body.owner      
-        feed.save (err) ->
+        comment.save (err) ->
           if err?
             response.send err 
           else
-            response.send feed
+            response.send comment
 
------------
+
 

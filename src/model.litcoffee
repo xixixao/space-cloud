@@ -40,17 +40,17 @@ We define our models, with appropriate schemas,
         _id: {type:String, unique: true} #question id
         timestamp: {type: Date, default: Date.now}
         owner: {type: Schema.Types.ObjectId, ref: 'User'}
-        feeds: [type: Schema.Types.ObjectId, ref: 'Feed']
+        comments: [type: Schema.Types.ObjectId, ref: 'Comment']
         filePosition: String
       Question = mongoose.model('Question', questionSchema)
 
-      feedSchema = Schema
-        _id: {type:String, unique: true} #feed id
+      commentSchema = Schema
+        _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: Schema.Types.ObjectId, ref: 'User'}
-      Feed = mongoose.model('Feed', feedSchema)        
+      Comment = mongoose.model('Comment', commentSchema)        
 
-      {Course, User, File, Question, Feed}
+      {Course, User, File, Question, Comment}
 
 and export them.
 

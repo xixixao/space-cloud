@@ -2,7 +2,7 @@ This is the definition of our service, via a RESTful API.
 
     Q = require 'q'
     (require './q-each') Q
-    {Course, User, File, CommentA, CommentQ, Question, Answer} = require './model'
+    {Topic, User, File, CommentA, CommentQ, Question, Answer} = require './model'
 
     module.exports = (app) ->
 
@@ -15,16 +15,16 @@ Finds a user with a given login and returns the details
           if err?
             response.send err 
           else
-            user.populate 'courses.code', (err, user) ->
+            user.populate 'topics.code', (err, user) ->
               user = user.toObject()
 
-              coursePermissions = user.courses
-              files = Q.map coursePermissions, ({code}) ->
-                courseId = code._id
-                Q.ninvoke File, 'find', course: courseId
+              topicPermissions = user.topics
+              files = Q.map topicPermissions, ({code}) ->
+                topicId = code._id
+                Q.ninvoke File, 'find', topic: topicId
 
               files.thenEach (files, i) ->
-                user.courses[i].code.files = files
+                user.topics[i].code.files = files
                 response.send user
               .done()
 
@@ -37,7 +37,7 @@ Adds a user to the DB
           name: request.body.name
           _id: request.body._id 
           password: request.body.password
-          courses: request.body.courses
+          topics: request.body.topics
         user.save (err) ->
           if err?
             response.send err 
@@ -59,25 +59,25 @@ Login validation
               response.send "ok" 
 
 -----------------------
-Adds a course to the DB
+Adds a topic to the DB
 -----------------------
 
-      app.post '/courses', (request, response) ->
-        course = new Course
+      app.post '/topics', (request, response) ->
+        topic = new Topic
           name: request.body.name
           _id: request.body._id
-        course.save (err) ->
+        topic.save (err) ->
           if err?
             response.send err 
           else
-            response.send course
+            response.send topic
 
 -------------------------------------------
-Retrieves a course from the DB with id code
+Retrieves a topic from the DB with id code
 -------------------------------------------
 
-      app.get '/courses/:code', (request, response) ->
-        Course.findOne _id: request.params.code, (err, docs) ->
+      app.get '/topics/:code', (request, response) ->
+        Topic.findOne _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
           else
@@ -85,7 +85,7 @@ Retrieves a course from the DB with id code
 
 
 ---------------------------------------------------
-Adds a list of courses to the user with login given
+Adds a list of topics to the user with login given
 ---------------------------------------------------
 
       app.post '/users/:login', (request, response) ->
@@ -93,9 +93,9 @@ Adds a list of courses to the user with login given
           if err?
             response.send err 
           else
-            courses = request.body.courses
-            for course in courses
-              user.courses.addToSet course
+            topics = request.body.topics
+            for topic in topics
+              user.topics.addToSet topic
             response.send user
 
 
@@ -109,7 +109,7 @@ Creates and saves a new file to the DB
           path: request.body.path
           name: request.body.name
           owner: request.body.owner
-          course: request.body.course
+          topic: request.body.topic
         file.save (err) ->
           if err?
             response.send err 

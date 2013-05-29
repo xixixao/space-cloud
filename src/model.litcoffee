@@ -16,28 +16,28 @@ We define our models, with appropriate schemas,
     defineModels = ->
       Schema = mongoose.Schema
 
-      courseSchema = Schema
+      topicSchema = Schema
         name: String
         _id: {type: String, unique: true}
-      Course = mongoose.model('Course', courseSchema)
+      Topic = mongoose.model('Topic', topicSchema)
 
-      coursePermission = Schema
-        code: {type: String, ref: 'Course'}
+      topicPermission = Schema
+        code: {type: String, ref: 'Topic'}
         permission: String
 
       userSchema = Schema
         name: String
         _id: {type: String, unique: true, dropDups: true}
         password: String
-        courses: [coursePermission]
+        topics: [topicPermission]
       User = mongoose.model('User', userSchema)
 
       fileSchema = Schema
-        _id: {type: String, unique: true} # course._id-fileid
+        _id: {type: String, unique: true} # topic._id-fileid
         path: String
         name: String
         owner: {type: String, ref: 'User'}
-        course: {type: String, ref: 'Course'}
+        topic: {type: String, ref: 'Topic'}
       File = mongoose.model('File', fileSchema)     
                  
       questionSchema = Schema
@@ -56,7 +56,6 @@ We define our models, with appropriate schemas,
         rank : Number
       Answer = mongoose.model('Answer', answerSchema)
 
-
       commentQSchema = Schema
         _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
@@ -71,7 +70,7 @@ We define our models, with appropriate schemas,
         answer: {type: String, ref: 'Answer'}
       CommentA = mongoose.model('CommentA', commentASchema)    
 
-      {Course, User, File, Question, CommentA, CommentQ, Answer}
+      {Topic, User, File, Question, CommentA, CommentQ, Answer}
 
 and export them.
 
@@ -96,37 +95,37 @@ We connect to our test database and erase it.
         Q.ninvoke collection, 'drop'
 
 
-For testing purposes, we fill in the database. We create couple courses,
+For testing purposes, we fill in the database. We create couple topics,
 
-    populate = ({Course, User})->
-      courses = Q.map [0..3], (i) ->
-        course = new Course
-          name: "course #{i}"
+    populate = ({Topic, User})->
+      topics = Q.map [0..3], (i) ->
+        topic = new Topic
+          name: "topic #{i}"
           _id: i
-        course.save()
+        topic.save()
 
-and couple users and assign each course to every user.
+and couple users and assign each topic to every user.
 
       users = Q.map [0..10], (i) ->
         user = new User
           name: "user#{i}"
-        courses.thenEach (course) ->
-          user.courses.addToSet course._id
+        topics.thenEach (topic) ->
+          user.topics.addToSet topic._id
         user.save()
 
-      Q.all [courses, users]
+      Q.all [topics, users]
 
 Check contents of the database.
 
-    printStats = ({User, Course})->
+    printStats = ({User, Topic})->
 
       users = User.find().exec().then (users) ->
         console.log "  Number of users #{users.length}"
 
-      courses = Course.find().exec().then (courses) ->
-        console.log "  Number of courses #{courses.length}"
+      topics = Topic.find().exec().then (topics) ->
+        console.log "  Number of topics #{topics.length}"
 
-      Q.all [users, courses]
+      Q.all [users, topics]
 
 And execute everything in correct synchronized order. Node will take care of executing this only once.
 

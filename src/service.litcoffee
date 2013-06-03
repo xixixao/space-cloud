@@ -56,6 +56,7 @@ Login validation
             if user.password != request.body.password
               response.send "error"
             else
+              request.session.user = user
               response.send "ok" 
 
 -----------------------
@@ -63,6 +64,7 @@ Adds a topic to the DB
 -----------------------
 
       app.post '/topics', (request, response) ->
+        console.log request.session.user
         topic = new Topic
           name: request.body.name
           _id: request.body._id

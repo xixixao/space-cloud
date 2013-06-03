@@ -2,6 +2,8 @@ This is the definition of our service, via a RESTful API.
 
     Q = require 'q'
     (require './q-each') Q
+    passport = require("passport")
+    LocalStrategy = require("passport-local").Strategy
     {Topic, User, File, CommentA, CommentQ, Question, Answer} = require './model'
 
     module.exports = (app) ->
@@ -35,7 +37,7 @@ Finds a user with a given login and returns the details
             user
 
 ----------------------
-Adds a user to the DB
+Adds a user to the DB - aka SIGN UP
 ----------------------
 
       app.post '/users', (request, response) ->
@@ -53,24 +55,19 @@ Adds a user to the DB
 ----------------
 Login validation
 ----------------
-
-      app.post '/login', (request, response) ->
-        User.findOne _id: request.body._id, (err, user) ->
-          if err?
-            response.send err 
-          else
-            if user.password != request.body.password
-              response.send "error"
-            else
-              request.session.user = user
-              response.send "ok" 
+      
+      app.post '/login', passport.authenticate('local'), (request, response) ->
+        response.send "logged in"
+        
 
 -----------------------
 Adds a topic to the DB
 -----------------------
 
       app.post '/topics', (request, response) ->
-        console.log request.session.user
+        if !request.isAuthenticated()
+          return response.send "not authenticated"
+        console.log request.user
         topic = new Topic
           name: request.body.name
           _id: request.body._id
@@ -275,10 +272,25 @@ Retrieve feeds for a particular user
 
         # on the questions, do topic_id "in" the list of courses
 
+Configuration for passport-local
 
-      
+      passport.use new LocalStrategy
+        usernameField: '_id'
+        passwordFiled: 'password'
+      , (username, password, done) ->
+        User.findOne _id: username, (err, user) ->
+          if err?
+            done err 
+          else if !user?
+            done null, false, 'Incorrect username'
+          else if user.password != password
+            done null, false, 'Incorrect password.'
+          else
+            done null, user
 
+      passport.serializeUser (user, done) ->
+        done null, user._id
 
-
-
-
+      passport.deserializeUser (id, done) ->
+        User.findOne _id: id, (err, user) ->
+          done null, user

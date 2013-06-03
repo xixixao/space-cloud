@@ -4,7 +4,9 @@
   "dependencies": {
     "express": "*",
   	"mongoose": "*",
-  	"q": "*"
+  	"q": "*",
+    "passport": "*",
+    "passport-local": "*"
   },
   "devDependencies": {
     "coffee-script": "*"

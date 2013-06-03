@@ -2,6 +2,7 @@ This is our backend server.
 
     express = require 'express'
     service = require './service'
+    passport = require("passport")
 
 We use express to reply to different requests in a fully RESTful matter.
 
@@ -14,11 +15,15 @@ We use express to reply to different requests in a fully RESTful matter.
 
     app.configure ->
       app.set 'port', port
+      app.use express.cookieParser()
       app.use express.bodyParser()
       app.use express.methodOverride()
       app.use express.compress()
-      app.use(express.cookieParser());
-      app.use(express.cookieSession(secret: 'secret', proxy: true));
+      app.use express.session(secret: 'keyboard cat')
+      app.use passport.initialize()
+      app.use passport.session()
+      ##app.use(express.cookieParser())
+      ##app.use(express.cookieSession(secret: 'secret', proxy: true))
 
 During development, we want to see errors in our responses.
 
@@ -33,8 +38,5 @@ Replies to any request to URI 'server-check', for testing purposes.
 We now attach our service to the server.
 
     service app
-
-    
-
 
 

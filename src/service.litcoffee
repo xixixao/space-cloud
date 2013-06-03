@@ -11,22 +11,28 @@ Finds a user with a given login and returns the details
 -------------------------------------------------------
 
       app.get '/users/:login', (request, response) ->
-        User.findOne _id: request.params.login, (err, user) ->
-          if err?
-            response.send err 
-          else
-            user.populate 'topics.code', (err, user) ->
-              user = user.toObject()
+        usersFiles(request.params.login)
+        .then (user) ->
+          response.send user
+        , (error) ->
+          response.send error
+        
+      usersFiles = (userId) ->
+        Q.ninvoke(User, 'findOne', _id: userId)
+        .then (user) ->
+          Q.ninvoke(user, 'populate', 'topics.code')
+        .then (user) ->
+          user = user.toObject()
 
-              topicPermissions = user.topics
-              files = Q.map topicPermissions, ({code}) ->
-                topicId = code._id
-                Q.ninvoke File, 'find', topic: topicId
+          topicPermissions = user.topics
+          fileLists = Q.map topicPermissions, ({code}) ->
+            topicId = code._id
+            Q.ninvoke File, 'find', topicCode: topicId
 
-              files.thenEach (files, i) ->
-                user.topics[i].code.files = files
-                response.send user
-              .done()
+          fileLists.thenEach (files, i) ->
+            user.topics[i].code.files = files
+          .then ->
+            user
 
 ----------------------
 Adds a user to the DB
@@ -83,7 +89,7 @@ Retrieves a topic from the DB with id code
           if err?
             response.send "not found"
           else
-          	response.send docs
+            response.send docs
 
 
 ---------------------------------------------------
@@ -111,7 +117,7 @@ Creates and saves a new file to the DB
           path: request.body.path
           name: request.body.name
           owner: request.body.owner
-          topic: request.body.topic
+          topicCode: request.body.topicCode
         file.save (err) ->
           if err?
             response.send err 
@@ -237,7 +243,42 @@ Retrieves a comment from an answer from the DB with id code
           if err?
             response.send "not found"
           else
-            response.send docs            
+            response.send docs     
+
+Retrieve feeds for a particular user
+
+      app.get '/feeds/:user', (request, response) ->
+        Q.ninvoke(
+          User.findOne(_id: request.params.user)
+          .select('topics.code')
+        , 'exec')
+        .then ({topics}) ->
+          topicCodes = (code for {code} in topics)
+          Q.ninvoke(
+            Question.find({})
+            .populate(
+              path: 'file'
+              match: topicCode: $in: topicCodes
+            )
+            .sort('-timestamp')
+          , 'exec')
+          .then (questions) ->
+            q for q in questions when q.file?
+        .then (questions) ->
+          response.send questions
+        .done()
+
+        # find questions
+        # populate file {topic_id}
+
+        # find user (list of topics inside it)
+
+        # on the questions, do topic_id "in" the list of courses
+
+
+      
+
+
 
 
 

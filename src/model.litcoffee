@@ -37,7 +37,7 @@ We define our models, with appropriate schemas,
         path: String
         name: String
         owner: {type: String, ref: 'User'}
-        topic: {type: String, ref: 'Topic'}
+        topicCode: {type: String, ref: 'Topic'}
       File = mongoose.model('File', fileSchema)     
                  
       questionSchema = Schema

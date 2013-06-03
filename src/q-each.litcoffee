@@ -7,7 +7,7 @@ We get an instance of q, Q, to append methods to.
 thenEach is an instance method on promises returned by Q.all. It provides a shortcut for mapping over all the returned values.
 
       Q.makePromise::thenEach = (callback) ->
-        @then (values) ->
+        Q.all @then (values) ->
           for value, i in values
             callback value, i
 

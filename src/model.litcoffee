@@ -18,7 +18,7 @@ We define our models, with appropriate schemas,
 
       topicSchema = Schema
         name: String
-        _id: {type: String, unique: true}
+        _id: {type: String, unique: true, dropDups: true}
       Topic = mongoose.model('Topic', topicSchema)
 
       topicPermission = Schema
@@ -42,7 +42,9 @@ We define our models, with appropriate schemas,
                  
       questionSchema = Schema
         _id: {type:String, unique: true} #question id
-        timestamp: {type: Date, default: Date.now}
+        createdTime: {type: Date, default: Date.now}
+        modifiedQuestionTime: {type: Date, default: Date.now}
+        modifiedTime: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         filePosition: String
         file: {type: String, ref: 'File'}
@@ -52,7 +54,7 @@ We define our models, with appropriate schemas,
       Question = mongoose.model('Question', questionSchema)
 
       answerSchema = Schema
-        _id: {type:String, unique: true} 
+        _id: {type:String, unique: true, dropDups: true} 
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         question: {type: String, ref: 'Question'}
@@ -62,7 +64,7 @@ We define our models, with appropriate schemas,
       Answer = mongoose.model('Answer', answerSchema)
 
       commentQSchema = Schema
-        _id: {type:String, unique: true} #comment id
+        _id: {type:String, unique: true, dropDups: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         question: {type: String, ref: 'Question'}
@@ -70,14 +72,19 @@ We define our models, with appropriate schemas,
       CommentQ = mongoose.model('CommentQ', commentQSchema)       
 
       commentASchema = Schema
-        _id: {type:String, unique: true} #comment id
+        _id: {type:String, unique: true, dropDups: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         answer: {type: String, ref: 'Answer'}
         text: String
-      CommentA = mongoose.model('CommentA', commentASchema)    
+      CommentA = mongoose.model('CommentA', commentASchema)   
 
-      {Topic, User, File, Question, CommentA, CommentQ, Answer}
+      eventSchema = Schema
+        type: String
+        timestamp: {type: Date, default: Date.now}
+      Event = mongoose.model('Event', eventSchema)
+
+      {Topic, User, File, Question, CommentA, CommentQ, Answer, Event}
 
 and export them.
 

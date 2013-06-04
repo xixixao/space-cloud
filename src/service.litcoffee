@@ -3,7 +3,7 @@ This is the definition of our service, via a RESTful API.
     Q = require 'q'
     (require './q-each') Q
     passport = require("passport")
-    {wipe, Topic, User, File, CommentA, CommentQ, Question, Answer} = require './model'
+    {Topic, User, File, CommentA, CommentQ, Question, Answer, Event} = require './model'
     {canRead, canWrite, authenticated} = require './authentication'
 
     module.exports = (app) ->
@@ -101,6 +101,29 @@ Adds a list of topics to the user with login given
               user.topics.addToSet topic
             response.send user
 
+------------------------
+Adds an event to the DB
+------------------------
+
+      addEvent = (type) ->
+        event = new Event
+          type: type
+        event.save (err) ->
+          if err?
+            return err
+          else
+            return event
+
+------------------------------------
+Retrieve all the events from the DB
+------------------------------------
+
+      app.get '/events', (request, response) ->
+        Event.find {}, (err, events) ->
+          if err?
+            response.send err
+          else
+            response.send events
 
 --------------------------------------
 Creates and saves a new file to the DB
@@ -120,6 +143,7 @@ Creates and saves a new file to the DB
           if err?
             response.send err
           else
+            addEvent "File added"
             response.send file
 
 -------------------------------------------
@@ -183,6 +207,7 @@ Creates and saves a new answer to the DB
             Q.ninvoke(Question, 'findById', request.body.question)
             .then (question) ->
               question.answers.addToSet answer
+              question.modifiedTime = answer.timestamp
               question.save() 
             response.send answer
 
@@ -215,6 +240,7 @@ Creates and saves a new comment to a question to the DB
             Q.ninvoke(Question, 'findById', request.body.question)
             .then (question) ->
               question.comments.addToSet comment
+              question.modifiedTime = comment.timestamp
               question.save()        
             response.send comment
 
@@ -276,7 +302,7 @@ Retrieve feeds for a particular user
               path: 'file'
               match: topicCode: $in: topicCodes
             )
-            .sort('-timestamp')
+            .sort('-modifiedTime')
           , 'exec')
           .then (questions) ->
             q for q in questions when q.file?

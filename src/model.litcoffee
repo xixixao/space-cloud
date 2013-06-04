@@ -46,6 +46,9 @@ We define our models, with appropriate schemas,
         owner: {type: String, ref: 'User'}
         filePosition: String
         file: {type: String, ref: 'File'}
+        answers: [answerSchema]
+        comments: [commentQSchema]
+        text: String
       Question = mongoose.model('Question', questionSchema)
 
       answerSchema = Schema
@@ -54,6 +57,8 @@ We define our models, with appropriate schemas,
         owner: {type: String, ref: 'User'}
         question: {type: String, ref: 'Question'}
         rank : Number
+        comments: [commentASchema]
+        text: String
       Answer = mongoose.model('Answer', answerSchema)
 
       commentQSchema = Schema
@@ -61,6 +66,7 @@ We define our models, with appropriate schemas,
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         question: {type: String, ref: 'Question'}
+        text: String
       CommentQ = mongoose.model('CommentQ', commentQSchema)       
 
       commentASchema = Schema
@@ -68,6 +74,7 @@ We define our models, with appropriate schemas,
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         answer: {type: String, ref: 'Answer'}
+        text: String
       CommentA = mongoose.model('CommentA', commentASchema)    
 
       {Topic, User, File, Question, CommentA, CommentQ, Answer}

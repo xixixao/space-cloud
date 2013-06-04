@@ -68,7 +68,6 @@ Adds a topic to the DB
         topic = new Topic
           name: request.body.name
           _id: request.body._id
-        #console.log topic
         topic.save (err) ->
           if err?
             response.send err
@@ -143,6 +142,7 @@ Creates and saves a new question to the DB
           owner: request.body.owner
           filePosition: request.body.filePosition
           file: request.body.file
+          text: request.body.text
         question.save (err) ->
           if err?
             response.send err
@@ -172,10 +172,15 @@ Creates and saves a new answer to the DB
           owner: request.body.owner
           question: request.body.question
           rank: request.body.rank
+          text: request.body.text
         answer.save (err) ->
           if err?
             response.send err
           else
+            Q.ninvoke(Question, 'findById', request.body.question)
+            .then (question) ->
+              question.answers.addToSet answer
+              question.save() 
             response.send answer
 
 -------------------------------------------
@@ -199,10 +204,15 @@ Creates and saves a new comment to a question to the DB
           _id: request.body._id
           owner: request.body.owner
           question: request.body.question
+          text: request.body.text
         comment.save (err) ->
           if err?
             response.send err
-          else
+          else    
+            Q.ninvoke(Question, 'findById', request.body.question)
+            .then (question) ->
+              question.comments.addToSet comment
+              question.save()        
             response.send comment
 
 ------------------------------------------------------------
@@ -226,10 +236,15 @@ Creates and saves a new comment to an answer to the DB
           _id: request.body._id
           owner: request.body.owner
           answer: request.body.answer
+          text: request.body.text
         comment.save (err) ->
           if err?
             response.send err
           else
+            Q.ninvoke(Answer, 'findById', request.body.answer)
+            .then (answer) ->
+              answer.comments.addToSet comment
+              answer.save() 
             response.send comment
 
 ------------------------------------------------------------

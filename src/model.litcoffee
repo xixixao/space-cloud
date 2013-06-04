@@ -101,6 +101,8 @@ We connect to our test database and erase it.
       Q.map db.collections, (collection) ->
         Q.ninvoke collection, 'drop'
 
+    module.exports.wipe = wipe
+
 
 For testing purposes, we fill in the database. We create couple topics,
 

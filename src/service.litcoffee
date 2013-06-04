@@ -3,7 +3,7 @@ This is the definition of our service, via a RESTful API.
     Q = require 'q'
     (require './q-each') Q
     passport = require("passport")
-    {Topic, User, File, CommentA, CommentQ, Question, Answer} = require './model'
+    {wipe, Topic, User, File, CommentA, CommentQ, Question, Answer} = require './model'
     {canRead, canWrite, authenticated} = require './authentication'
 
     module.exports = (app) ->

@@ -81,6 +81,8 @@ We define our models, with appropriate schemas,
 
       eventSchema = Schema
         type: String
+        link: String
+        model: String
         timestamp: {type: Date, default: Date.now}
       Event = mongoose.model('Event', eventSchema)
 

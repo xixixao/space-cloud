@@ -105,9 +105,11 @@ Adds a list of topics to the user with login given
 Adds an event to the DB
 ------------------------
 
-      addEvent = (type) ->
+      addEvent = (type, model, link) ->
         event = new Event
+          model: model
           type: type
+          link: link
         event.save (err) ->
           if err?
             return err
@@ -119,11 +121,23 @@ Retrieve all the events from the DB
 ------------------------------------
 
       app.get '/events', (request, response) ->
-        Event.find {}, (err, events) ->
+        Event.find({}).sort('-timestamp').exec (err, events) ->
           if err?
             response.send err
           else
-            response.send events
+            Q.map events, (event) ->
+              Q.ninvoke event, 'populate',
+                model: event.model
+                path: 'link'
+            .then (events) ->
+              response.send events
+
+              #event.populate
+              #  model: event.model
+              #  path: 'link'
+              #, (err, event) ->
+              #  console.log event 
+              #response.send events
 
 --------------------------------------
 Creates and saves a new file to the DB
@@ -143,7 +157,7 @@ Creates and saves a new file to the DB
           if err?
             response.send err
           else
-            addEvent "File added"
+            addEvent "Added", "File", file._id
             response.send file
 
 -------------------------------------------
@@ -174,6 +188,7 @@ Creates and saves a new question to the DB
           if err?
             response.send err
           else
+            addEvent "Added", "Question", question._id
             response.send question
 
 -------------------------------------------
@@ -209,6 +224,7 @@ Creates and saves a new answer to the DB
               question.answers.addToSet answer
               question.modifiedTime = answer.timestamp
               question.save() 
+            addEvent "Added", "Answer", answer._id
             response.send answer
 
 -------------------------------------------
@@ -241,7 +257,8 @@ Creates and saves a new comment to a question to the DB
             .then (question) ->
               question.comments.addToSet comment
               question.modifiedTime = comment.timestamp
-              question.save()        
+              question.save()   
+            addEvent "Added", "CommentQ", comment._id      
             response.send comment
 
 ------------------------------------------------------------
@@ -274,6 +291,7 @@ Creates and saves a new comment to an answer to the DB
             .then (answer) ->
               answer.comments.addToSet comment
               answer.save() 
+            addEvent "Added", "CommentA", comment._id  
             response.send comment
 
 ------------------------------------------------------------

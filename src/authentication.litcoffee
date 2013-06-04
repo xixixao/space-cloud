@@ -31,11 +31,14 @@ Retreaving the complete information.
 
 Restricting the user access to our API.
 
-    restrict = (request, topic, permission) ->
-      if !request.isAuthenticated()
-        false
-      else
-        console.log "ser", request.user
+    permises = (current, wanted) ->
+      switch current
+        when 'w' then true
+        when 'r' then wanted is 'r'
+
+    restrict = (request, topic, requiredPermission) ->
+      for {code, permission} in request.user.topics when code is topic
+        return permises permission, requiredPermission
 
 Exporting the restricting functions.
 
@@ -44,6 +47,11 @@ Exporting the restricting functions.
         restrict request, topic, 'w'
       canRead: (request, topic) ->
         restrict request, topic, 'r'
+      authenticated: (request, response, next) ->
+        if request.isAuthenticated()
+          next()
+        else
+          response.send 401, "User is not logged in"
 
 
 

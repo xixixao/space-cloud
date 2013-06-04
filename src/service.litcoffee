@@ -4,7 +4,7 @@ This is the definition of our service, via a RESTful API.
     (require './q-each') Q
     passport = require("passport")
     {Topic, User, File, CommentA, CommentQ, Question, Answer} = require './model'
-    {canRead, canWrite} = require './authentication'
+    {canRead, canWrite, authenticated} = require './authentication'
 
     module.exports = (app) ->
 
@@ -84,8 +84,6 @@ Retrieves a topic from the DB with id code
         Topic.findById topicCode, (err, docs) ->
           if err?
             response.send "not found"
-          #else unless canRead request, topicCode
-          #  response.send "permission denied"
           else
             response.send docs
 
@@ -109,7 +107,10 @@ Adds a list of topics to the user with login given
 Creates and saves a new file to the DB
 --------------------------------------
 
-      app.post '/files', (request, response) ->
+      app.post '/files', authenticated, (request, response) ->
+        if !canWrite request, request.body.topicCode
+          return response.send 401, 'User doesnt have write permission'
+
         file = new File
           _id: request.body._id
           path: request.body.path
@@ -126,12 +127,14 @@ Creates and saves a new file to the DB
 Retrieves a file from the DB with id code
 -------------------------------------------
 
-      app.get '/files/:code', (request, response) ->
-        File.findById request.params.code, (err, docs) ->
-          if err?
-            response.send "not found"
+      app.get '/files/:code', authenticated, (request, response) ->
+        File.findById request.params.code, (err, file) ->
+          if err? or !file?
+            response.send 404, "not found"
+          else if !canRead request, file.topicCode
+            response.send 401, "cant read"
           else
-            response.send docs
+            response.send file
 
 ------------------------------------------
 Creates and saves a new question to the DB

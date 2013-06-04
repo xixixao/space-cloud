@@ -68,12 +68,12 @@ Adds a topic to the DB
         topic = new Topic
           name: request.body.name
           _id: request.body._id
-        console.log topic
-        #topic.save (err) ->
-        #  if err?
-        #    response.send err
-        #  else
-        #    response.send topic
+        #console.log topic
+        topic.save (err) ->
+          if err?
+            response.send err
+          else
+            response.send topic
 
 -------------------------------------------
 Retrieves a topic from the DB with id code

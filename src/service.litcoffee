@@ -60,6 +60,14 @@ Login validation
         response.send "logged in"
 
 
+
+Updating user details
+---------------------
+
+      app.post '/users/:login', authenticated, (request, response) ->
+        request.user.update ({name: request.body.name , password: request.body.password })
+        response.send "User updated"
+
 -----------------------
 Adds a topic to the DB
 -----------------------
@@ -133,16 +141,7 @@ Retrieve all the events from the DB
         .then (events) ->
           response.send events
         .done()
-        # Event.find({}).sort('-timestamp').exec (err, events) ->
-        #   if err?
-        #     response.send err
-        #   else
-        #     # Q.map events, (event) ->
-        #     #   Q.ninvoke event, 'populate',
-        #     #     model: event.model
-        #     #     path: 'link'
-        #     # .then (events) ->
-        #     response.send events
+   
 
 
 --------------------------------------

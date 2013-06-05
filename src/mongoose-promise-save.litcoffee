@@ -9,4 +9,5 @@ Uses Q to fix mongoose's save to return a promise, implements https://github.com
         if cb?
           save.bind(this) cb
         else
-          Q.nfcall save.bind(this)
+          promise = Q.nfcall save.bind(this)
+          promise

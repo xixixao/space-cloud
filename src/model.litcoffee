@@ -16,11 +16,6 @@ We define our models, with appropriate schemas,
     defineModels = ->
       Schema = mongoose.Schema
 
-      topicSchema = Schema
-        name: String
-        _id: {type: String, unique: true}
-      Topic = mongoose.model('Topic', topicSchema)
-
       topicPermission = Schema
         code: {type: String, ref: 'Topic'}
         permission: String
@@ -32,24 +27,13 @@ We define our models, with appropriate schemas,
         topics: [topicPermission]
       User = mongoose.model('User', userSchema)
 
-      fileSchema = Schema
-        _id: {type: String, unique: true} # topic._id-fileid
-        path: String
-        name: String
-        owner: {type: String, ref: 'User'}
-        topicCode: {type: String, ref: 'Topic'}
-      File = mongoose.model('File', fileSchema)     
-                 
-      questionSchema = Schema
-        _id: {type:String, unique: true} #question id
+      commentASchema = Schema
+        _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        filePosition: String
-        file: {type: String, ref: 'File'}
-        answers: [answerSchema]
-        comments: [commentQSchema]
+        answer: {type: String, ref: 'Answer'}
         text: String
-      Question = mongoose.model('Question', questionSchema)
+      CommentA = mongoose.model('CommentA', commentASchema)    
 
       answerSchema = Schema
         _id: {type:String, unique: true} 
@@ -67,16 +51,35 @@ We define our models, with appropriate schemas,
         owner: {type: String, ref: 'User'}
         question: {type: String, ref: 'Question'}
         text: String
-      CommentQ = mongoose.model('CommentQ', commentQSchema)       
+      CommentQ = mongoose.model('CommentQ', commentQSchema)
 
-      commentASchema = Schema
-        _id: {type:String, unique: true} #comment id
+      questionSchema = Schema
+        _id: {type:String, unique: true} #question id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        answer: {type: String, ref: 'Answer'}
+        filePosition: String
+        file: {type: String, ref: 'File'}
+        answers: [answerSchema]
+        comments: [commentQSchema]
         text: String
-      CommentA = mongoose.model('CommentA', commentASchema)    
+      Question = mongoose.model('Question', questionSchema)
 
+      fileSchema = Schema
+        _id: {type: String, unique: true} # topic._id-fileid
+        path: String
+        name: String
+        owner: {type: String, ref: 'User'}
+        topicCode: {type: String, ref: 'Topic'}
+        questions: [questionSchema]
+      File = mongoose.model('File', fileSchema)     
+      
+      topicSchema = Schema
+        name: String
+        _id: {type: String, unique: true}
+        files: [fileSchema]
+      Topic = mongoose.model('Topic', topicSchema)
+      
+      
       {Topic, User, File, Question, CommentA, CommentQ, Answer}
 
 and export them.

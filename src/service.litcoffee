@@ -68,6 +68,7 @@ Adds a topic to the DB
         topic = new Topic
           name: request.body.name
           _id: request.body._id
+          files: []
         topic.save (err) ->
           if err?
             response.send err
@@ -106,8 +107,8 @@ Adds a list of topics to the user with login given
 Creates and saves a new file to the DB
 --------------------------------------
 
-      app.post '/files', authenticated, (request, response) ->
-        if !canWrite request, request.body.topicCode
+      app.post '/topics/:topicId/files', authenticated, (request, response) ->
+        if !canWrite request, request.params.topicId
           return response.send 401, 'User doesnt have write permission'
 
         file = new File
@@ -115,73 +116,81 @@ Creates and saves a new file to the DB
           path: request.body.path
           name: request.body.name
           owner: request.body.owner
-          topicCode: request.body.topicCode
-        file.save (err) ->
-          if err?
-            response.send err
-          else
-            response.send file
+          topicCode: request.params.topicId
+        topicPromise = Q.ninvoke Topic, 'findById', request.params.topicId
+        topicPromise.then (topic) ->
+          if !topic?
+            return response.send 404, "Topic not found"
+          topic.files.addToSet file  
+          topic.save()
+        .then ->
+          response.send file
+        , (error) ->
+          response.send 500, error
+        .done()
 
 -------------------------------------------
 Retrieves a file from the DB with id code
 -------------------------------------------
 
-      app.get '/files/:code', authenticated, (request, response) ->
-        File.findById request.params.code, (err, file) ->
-          if err? or !file?
-            response.send 404, "not found"
-          else if !canRead request, file.topicCode
-            response.send 401, "cant read"
-          else
-            response.send file
+      findFile = (request, {topicId, fileId}) ->
+        Q.ninvoke(Topic, 'findById', topicId)
+        .then (topic) ->
+          if !topic?
+            throw [404, "not found"]
+          if !canRead request, topicId
+            throw [401, "cant read"]
+          [topic, topic.files.id fileId]
 
+      app.get '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          console.log file
+          response.send file
+        , (error) ->
+          response.send error...
+        .done()  
+
+        
 ------------------------------------------
 Creates and saves a new question to the DB
 ------------------------------------------
 
-      app.post '/questions', authenticated, (request, response) ->
-        filePromise = Q.ninvoke File, 'findById', request.body.file
-        filePromise.then (file) ->
-          if !file?
-            return response.send 404, "File not found"
-          if !canRead request, file.topicCode
-            return response.send 401, 'User doesnt have write permission'
+      app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
           question = new Question
             _id: request.body._id
             owner: request.body.owner
             filePosition: request.body.filePosition
             file: request.body.file
             text: request.body.text
-          question.save (err) ->
-            if err?
-              response.send err
-            else
-              response.send question
+          file.questions.addToSet question
+          topic.save()
+          .then ->
+            response.send question
         , (error) ->
-          response.send 500, "File could not be found"
-        .done()
+          response.send error...
+        .done() 
 
 
 -------------------------------------------
 Retrieves a question from the DB with id code
 -------------------------------------------
 
-      app.get '/questions/:code', authenticated, (request, response) ->
-        Question.findById request.params.code, (err, question) ->
-          if err? or !question
-            response.send 404, "question not found"
-          else 
-            filePromise = Q.ninvoke File, 'findById', question.file
-            filePromise.then (file) ->
-              if !file?
-                return response.send 404, "File not found"
-              if !canRead request, file.topicCode
-                return response.send 401, 'User doesnt have write permission'
-              else
-                response.send question
-            , (error) ->
-              response.send 500, "File could not be found"
-            .done()
+      findQuestion = ({topicId, fileId, questionId}) ->
+        findFile(request, {topicId, fileId})
+        .then ([topic, file]) ->
+          question = file.questions.id questionId
+          [topic, file, question]
+
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
+        findQuestion(request.params) 
+        .then ([topic, file, question]) ->
+          response.send question
+        , (error) ->
+          response.send error...
+        .done()
 
 
 ------------------------------------------
@@ -259,6 +268,9 @@ Creates and saves a new comment to a question to the DB
 -------------------------------------------------------
 
       app.post '/commentsQ', authenticated, (request, response) ->
+        
+
+
         comment = new CommentQ
           _id: request.body._id
           owner: request.body.owner

@@ -68,6 +68,7 @@ Adds a topic to the DB
         topic = new Topic
           name: request.body.name
           _id: request.body._id
+          files: []
         topic.save (err) ->
           if err?
             response.send err
@@ -143,8 +144,15 @@ Retrieve all the events from the DB
 Creates and saves a new file to the DB
 --------------------------------------
 
-      app.post '/files', authenticated, (request, response) ->
-        if !canWrite request, request.body.topicCode
+      findTopic = ({topicId}) ->
+        Q.ninvoke(Topic, 'findById', topicId)
+        .then (topic) ->
+          if !topic?
+            throw [404, "topic not found"]
+          topic
+
+      app.post '/topics/:topicId/files', authenticated, (request, response) ->
+        if !canWrite request, request.params.topicId
           return response.send 401, 'User doesnt have write permission'
 
         file = new File
@@ -152,98 +160,157 @@ Creates and saves a new file to the DB
           path: request.body.path
           name: request.body.name
           owner: request.body.owner
-          topicCode: request.body.topicCode
-        file.save (err) ->
-          if err?
-            response.send err
-          else
-            addEvent "Added", "File", file._id
-            response.send file
+        findTopic(request.params)
+        .then (topic) ->
+          topic.files.addToSet file  
+          addEvent "Added", "File", file._id
+          console.log topic
+          topic.save()
+        .then ->
+          response.send file
+        , (error) ->
+          response.send 500, error
+        .done()
 
 -------------------------------------------
 Retrieves a file from the DB with id code
 -------------------------------------------
 
-      app.get '/files/:code', authenticated, (request, response) ->
-        File.findById request.params.code, (err, file) ->
-          if err? or !file?
-            response.send 404, "not found"
-          else if !canRead request, file.topicCode
-            response.send 401, "cant read"
-          else
-            response.send file
+      findFile = (request, {topicId, fileId}) ->
+        findTopic(topicId)
+        .then (topic) ->
+          if !canRead request, topicId
+            throw [401, "cant read"]
+          [topic, topic.files.id fileId]
 
+      app.get '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          console.log file
+          response.send file
+        , (error) ->
+          response.send error...
+        .done()  
+
+        
 ------------------------------------------
 Creates and saves a new question to the DB
 ------------------------------------------
 
-      app.post '/questions', (request, response) ->
-        question = new Question
-          _id: request.body._id
-          owner: request.body.owner
-          filePosition: request.body.filePosition
-          file: request.body.file
-          text: request.body.text
-        question.save (err) ->
-          if err?
-            response.send err
-          else
+
+      app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          question = new Question
+            _id: request.body._id
+            owner: request.body.owner
+            filePosition: request.body.filePosition
+            file: request.body.file
+            text: request.body.text
+          file.questions.addToSet question
+          topic.save()
+          .then ->
             addEvent "Added", "Question", question._id
             response.send question
+        , (error) ->
+          response.send error...
+        .done() 
+
 
 -------------------------------------------
 Retrieves a question from the DB with id code
 -------------------------------------------
 
-      app.get '/questions/:code', (request, response) ->
-        Question.findById request.params.code, (err, docs) ->
-          if err?
-            response.send "not found"
-          else
-            response.send docs
+      findQuestion = ({topicId, fileId, questionId}) ->
+        findFile(request, {topicId, fileId})
+        .then ([topic, file]) ->
+          question = file.questions.id questionId
+          [topic, file, question]
 
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
+        findQuestion(request.params) 
+        .then ([topic, file, question]) ->
+          response.send question
+        , (error) ->
+          response.send error...
+        .done()
 
 
 ------------------------------------------
 Creates and saves a new answer to the DB
 ------------------------------------------
 
-      app.post '/answers', (request, response) ->
-        answer = new Answer
-          _id: request.body._id
-          owner: request.body.owner
-          question: request.body.question
-          rank: request.body.rank
-          text: request.body.text
-        answer.save (err) ->
-          if err?
-            response.send err
-          else
-            Q.ninvoke(Question, 'findById', request.body.question)
-            .then (question) ->
-              question.answers.addToSet answer
-              question.modifiedTime = answer.timestamp
-              question.save() 
+      app.post '/answers', authenticated, (request, response) ->
+        questionPromise = Q.ninvoke Question, 'findById', request.body.question
+        questionPromise.then (question) ->
+          if !question?
+            return response.send 404, "Question not found"
+          filePromise = Q.ninvoke File, 'findById', question.file
+          filePromise.then (file) ->
+            if !file?
+              return response.send 404, "File not found"
+            if !canRead request, file.topicCode
+              return response.send 401, 'User doesnt have write permission' 
+            answer = new Answer
+              _id: request.body._id
+              owner: request.body.owner
+              question: request.body.question
+              rank: request.body.rank
+              text: request.body.text
             addEvent "Added", "Answer", answer._id
-            response.send answer
+            answer.save (err) ->
+              if err?
+                response.send err
+              else response.send question
+          , (error) ->
+              response.send 500, "File could not be found"
+          .done()
+        , (error) ->
+            response.send 500, "File could not be found"
+        .done()
 
 -------------------------------------------
 Retrieves an answer from the DB with id code
 -------------------------------------------
 
-      app.get '/answers/:code', (request, response) ->
-        Answer.findById request.params.code, (err, docs) ->
-          if err?
-            response.send "not found"
+      app.get '/answers/:code', authenticated, (request, response) ->
+        Q.ninvoke(Answer, 'findById', request.params.code)
+        .fail (error) ->
+          response.send 500, "Answer could not be found"
+        .then (answer) ->
+          if err? or !answer
+            response.send 404, "answer not found"
           else
-            response.send docs
-
+            Q.ninvoke(Question, 'findById', answer.question)
+            .fail (error) ->
+              response.send 500, "Question could not be found"
+            .then (question) ->
+              if !question?
+                response.send 404, "Question not found"
+                throw ""
+              Q.ninvoke(File, 'findById', question.file)
+              .fail (error) ->
+                response.send 500, "File could not be found"
+              .then (file) ->
+                if !file?
+                  return response.send 404, "File not found"
+                if !canRead request, file.topicCode
+                  return response.send 401, 'User doesnt have write permission'
+                else
+                  question.answers.addToSet answer
+                  response.send question
+                  question.save() 
+        .done()
+            
 
 -------------------------------------------------------
 Creates and saves a new comment to a question to the DB
 -------------------------------------------------------
 
-      app.post '/commentsQ', (request, response) ->
+      app.post '/commentsQ', authenticated, (request, response) ->
+        
+
+
         comment = new CommentQ
           _id: request.body._id
           owner: request.body.owner
@@ -265,7 +332,7 @@ Creates and saves a new comment to a question to the DB
 Retrieves a comment from a question from the DB with id code
 ------------------------------------------------------------
 
-      app.get '/commentsQ/:code', (request, response) ->
+      app.get '/commentsQ/:code', authenticated, (request, response) ->
         CommentQ.find _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
@@ -277,7 +344,7 @@ Retrieves a comment from a question from the DB with id code
 Creates and saves a new comment to an answer to the DB
 -------------------------------------------------------
 
-      app.post '/commentsA', (request, response) ->
+      app.post '/commentsA', authenticated, (request, response) ->
         comment = new CommentA
           _id: request.body._id
           owner: request.body.owner
@@ -298,7 +365,7 @@ Creates and saves a new comment to an answer to the DB
 Retrieves a comment from an answer from the DB with id code
 ------------------------------------------------------------
 
-      app.get '/commentsA/:code', (request, response) ->
+      app.get '/commentsA/:code', authenticated, (request, response) ->
         CommentA.find _id: request.params.code, (err, docs) ->
           if err?
             response.send "not found"
@@ -307,7 +374,7 @@ Retrieves a comment from an answer from the DB with id code
 
 Retrieve feeds for a particular user
 
-      app.get '/feeds/:user', (request, response) ->
+      app.get '/feeds/:user', authenticated, (request, response) ->
         Q.ninvoke(
           User.findById(request.params.user)
           .select('topics.code')

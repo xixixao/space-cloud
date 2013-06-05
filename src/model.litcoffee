@@ -67,6 +67,7 @@ We define our models, with appropriate schemas,
         link: [String]
         model: String
         timestamp: {type: Date, default: Date.now}
+        topicCode: {type: String, ref: 'Topic'}
       Event = mongoose.model('Event', eventSchema)
 
       fileSchema = Schema

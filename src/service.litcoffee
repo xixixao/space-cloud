@@ -106,10 +106,11 @@ Adds a list of topics to the user with login given
 Adds an event to the DB
 ------------------------
 
-      addEvent = (type, model, link) ->
+      addEvent = (type, model, link, topicCode) ->
         event = new Event
           model: model
           type: type
+          topicCode: topicCode
         for item in link 
           event.link.addToSet item
         event.save (err) ->
@@ -122,17 +123,26 @@ Adds an event to the DB
 Retrieve all the events from the DB
 ------------------------------------
 
-      app.get '/events', (request, response) ->
-        Event.find({}).sort('-timestamp').exec (err, events) ->
-          if err?
-            response.send err
-          else
-            # Q.map events, (event) ->
-            #   Q.ninvoke event, 'populate',
-            #     model: event.model
-            #     path: 'link'
-            # .then (events) ->
-            response.send events
+      app.get '/events', authenticated, (request, response) ->
+        topicCodes = (code for {code} in request.user.topics)
+        Q.ninvoke(
+            Event.find({})
+            .where('topicCode').in(topicCodes)
+            .sort('-timestamp')
+          , 'exec')
+        .then (events) ->
+          response.send events
+        .done()
+        # Event.find({}).sort('-timestamp').exec (err, events) ->
+        #   if err?
+        #     response.send err
+        #   else
+        #     # Q.map events, (event) ->
+        #     #   Q.ninvoke event, 'populate',
+        #     #     model: event.model
+        #     #     path: 'link'
+        #     # .then (events) ->
+        #     response.send events
 
 
 --------------------------------------
@@ -158,7 +168,7 @@ Creates and saves a new file to the topics list of files
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file  
-          addEvent "Added", "File", [request.params.topicId, request.body._id]
+          addEvent "Added", "File", [request.body._id], request.params.topicId
           topic.save()
         .then ->
           response.send file
@@ -203,7 +213,7 @@ Creates and saves a new question to the DB
           file.questions.addToSet question
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "Question", [request.params.topicId, request.params.fileId, request.body._id]
+          addEvent "Added", "Question", [request.params.fileId, request.body._id], request.params.topicId
           response.send question
         , (error) ->
           response.send error...
@@ -246,7 +256,7 @@ Creates and saves a new answer to the DB
           question.answers.addToSet answer
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent "Added", "Answer", [request.params.topicId, request.params.fileId, request.params.questionId, request.body._id]
+            addEvent "Added", "Answer", [request.params.fileId, request.params.questionId, request.body._id], request.params.topicId
             response.send question
         , (error) ->
           response.send error...
@@ -285,7 +295,7 @@ Creates and saves a new comment to a question to the DB
           question.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "CommentQ", [request.params.topicId, request.params.fileId, request.params.questionId, request.body._id]
+          addEvent "Added", "CommentQ", [request.params.fileId, request.params.questionId, request.body._id], request.params.topicId
           response.send comment
         , (error) ->
           response.send error
@@ -325,7 +335,7 @@ Creates and saves a new comment to an answer to the DB
           answer.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "CommentA", [request.params.topicId, request.params.fileId, request.params.questionId, request.params.answerId, request.body._id]
+          addEvent "Added", "CommentA", [request.params.fileId, request.params.questionId, request.params.answerId, request.body._id], request.params.topicId
           response.send comment
         , (error) ->
           response.send error...

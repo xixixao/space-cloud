@@ -110,7 +110,8 @@ Adds an event to the DB
         event = new Event
           model: model
           type: type
-          link: link
+        for item in link 
+          event.link.addToSet item
         event.save (err) ->
           if err?
             return err
@@ -126,12 +127,12 @@ Retrieve all the events from the DB
           if err?
             response.send err
           else
-            Q.map events, (event) ->
-              Q.ninvoke event, 'populate',
-                model: event.model
-                path: 'link'
-            .then (events) ->
-              response.send events
+            # Q.map events, (event) ->
+            #   Q.ninvoke event, 'populate',
+            #     model: event.model
+            #     path: 'link'
+            # .then (events) ->
+            response.send events
 
 
 --------------------------------------
@@ -157,7 +158,7 @@ Creates and saves a new file to the topics list of files
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file  
-          addEvent "Added", "File", file._id
+          addEvent "Added", "File", [request.params.topicId, request.body._id]
           topic.save()
         .then ->
           response.send file
@@ -192,19 +193,18 @@ Creates and saves a new question to the DB
 
 
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
+        question = new Question
+          _id: request.body._id
+          owner: request.body.owner
+          filePosition: request.body.filePosition
+          text: request.body.text
         findFile(request, request.params)
         .then ([topic, file]) ->
-          question = new Question
-            _id: request.body._id
-            owner: request.body.owner
-            filePosition: request.body.filePosition
-            file: request.body.file
-            text: request.body.text
           file.questions.addToSet question
           Q.ninvoke(topic, 'save')
-          .then ->
-            addEvent "Added", "Question", question._id
-            response.send question
+        .then ->
+          addEvent "Added", "Question", [request.params.topicId, request.params.fileId, request.body._id]
+          response.send question
         , (error) ->
           response.send error...
         .done() 
@@ -241,13 +241,12 @@ Creates and saves a new answer to the DB
           answer = new Answer
               _id: request.body._id
               owner: request.body.owner
-              question: request.body.question
               rank: request.body.rank
               text: request.body.text
           question.answers.addToSet answer
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent "Added", "Answer", answer._id
+            addEvent "Added", "Answer", [request.params.topicId, request.params.fileId, request.params.questionId, request.body._id]
             response.send question
         , (error) ->
           response.send error...
@@ -277,20 +276,19 @@ Creates and saves a new comment to a question to the DB
 -------------------------------------------------------
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/comments', authenticated, (request, response) ->
+        comment = new CommentQ
+          _id: request.body._id
+          owner: request.body.owner
+          text: request.body.text
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
-          comment = new CommentQ
-            _id: request.body._id
-            owner: request.body.owner
-            question: request.body.question
-            text: request.body.text
           question.comments.addToSet comment
           Q.ninvoke(topic, 'save')
-          .then ->
-            addEvent "Added", "CommentQ", comment._id
-            response.send comment
+        .then ->
+          addEvent "Added", "CommentQ", [request.params.topicId, request.params.fileId, request.params.questionId, request.body._id]
+          response.send comment
         , (error) ->
-          response.send error...
+          response.send error
         .done() 
         
 
@@ -318,18 +316,17 @@ Creates and saves a new comment to an answer to the DB
 -------------------------------------------------------
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments', authenticated, (request, response) ->
+        comment = new CommentA
+          _id: request.body._id
+          owner: request.body.owner
+          text: request.body.text
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
-          comment = new CommentA
-            _id: request.body._id
-            owner: request.body.owner
-            answer: request.body.answer
-            text: request.body.text
           answer.comments.addToSet comment
           Q.ninvoke(topic, 'save')
-          .then ->
-            addEvent "Added", "CommentA", comment._id
-            response.send comment
+        .then ->
+          addEvent "Added", "CommentA", [request.params.topicId, request.params.fileId, request.params.questionId, request.params.answerId, request.body._id]
+          response.send comment
         , (error) ->
           response.send error...
         .done() 

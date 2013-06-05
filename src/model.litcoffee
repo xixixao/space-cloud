@@ -31,7 +31,6 @@ We define our models, with appropriate schemas,
         _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        answer: {type: String, ref: 'Answer'}
         text: String
       CommentA = mongoose.model('CommentA', commentASchema)    
 
@@ -39,7 +38,6 @@ We define our models, with appropriate schemas,
         _id: {type:String, unique: true, dropDups: true} 
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        question: {type: String, ref: 'Question'}
         rank : Number
         comments: [commentASchema]
         text: String
@@ -49,7 +47,6 @@ We define our models, with appropriate schemas,
         _id: {type:String, unique: true, dropDups: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        question: {type: String, ref: 'Question'}
         text: String
       CommentQ = mongoose.model('CommentQ', commentQSchema)
 
@@ -60,7 +57,6 @@ We define our models, with appropriate schemas,
         modifiedTime: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         filePosition: String
-        file: {type: String, ref: 'File'}
         answers: [answerSchema]
         comments: [commentQSchema]
         text: String
@@ -68,7 +64,7 @@ We define our models, with appropriate schemas,
 
       eventSchema = Schema
         type: String
-        link: String
+        link: [String]
         model: String
         timestamp: {type: Date, default: Date.now}
       Event = mongoose.model('Event', eventSchema)

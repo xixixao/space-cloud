@@ -9,6 +9,7 @@
     "passport-local": "*"
   },
   "devDependencies": {
-    "coffee-script": "*"
+    "coffee-script": "*",
+    "nodemon": "*"
   }
 }

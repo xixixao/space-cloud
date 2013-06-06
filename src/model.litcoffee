@@ -102,7 +102,7 @@ We connect to our test database and erase it.
       db = mongoose.connection
 
       db.on "error", (error) ->
-        console.error "There has been an error:\n", error
+        console.error "DB error:(are you running the database?)\n", error
 
     wipe = ->
       db = mongoose.connection

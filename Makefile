@@ -1,33 +1,19 @@
-default: run
+default: watch
 
 SRCDIR         = src
 LIBDIR         = lib/cloud
 
 INDEX = $(LIBDIR)/index.js
 
-COFFEES =    $(shell find $(SRCDIR) -name "*.coffee"    -type f | sort)
-LITCOFFEES = $(shell find $(SRCDIR) -name "*.litcoffee" -type f | sort)
-CLIBS =     $(COFFEES:$(SRCDIR)/%.coffee=$(LIBDIR)/%.js)
-LCLIBS = $(LITCOFFEES:$(SRCDIR)/%.litcoffee=$(LIBDIR)/%.js)
-ROOT = $(shell pwd)
-
 COFFEE = node_modules/coffee-script/bin/coffee
+NODEMON = node node_modules/nodemon/nodemon.js
 
-run: build
-	node $(INDEX)
+watch:
+	$(COFFEE) -o $(LIBDIR) -cw $(SRCDIR) &
+	sleep 2
+	$(NODEMON) $(INDEX)
 
-build: $(CLIBS) $(LCLIBS)
-
-$(LIBDIR):
-	mkdir -p $(LIBDIR)/
-
-$(LIBDIR)/%.js: $(SRCDIR)/%.coffee $(LIBDIR)
-	cd $(SRCDIR) && ../$(COFFEE) -c -o ../$(LIBDIR)/ $(notdir $<)
-
-$(LIBDIR)/%.js: $(SRCDIR)/%.litcoffee $(LIBDIR)
-	cd $(SRCDIR) && ../$(COFFEE) -c -o ../$(LIBDIR)/ $(notdir $<)
-
-.PHONY: install loc clean
+.PHONY: loc clean
 
 loc:
 	wc -l src/*

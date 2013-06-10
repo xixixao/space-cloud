@@ -12,7 +12,7 @@ This is the definition of our service, via a RESTful API.
 Finds a user with a given login and returns the details
 -------------------------------------------------------
 
-      app.get '/users/:login', (request, response) ->
+      app.get '/users/:login', authenticated, (request, response) ->
         usersFiles(request.params.login)
         .then (user) ->
           response.send user
@@ -45,6 +45,8 @@ Adds a user to the DB - aka SIGN UP
           name: request.body.name
           _id: request.body._id
           password: request.body.password
+          email: request.body.email
+          facebook: request.body.facebook
           topics: request.body.topics
         user.save (err) ->
           if err?
@@ -56,8 +58,44 @@ Adds a user to the DB - aka SIGN UP
 Login validation
 ----------------
 
+      fromArrayToMap = (idKey, array) ->
+        result = {}
+        for element in array
+          result[element[idKey]] = element
+        return result
+
+      objectify = (topic) ->
+        for file in topic.files
+          for question in file.questions
+            for answer in question.answers
+              answer.comments = fromArrayToMap '_id', answer.comments
+            question.comments = fromArrayToMap '_id', question.comments
+            question.answers = fromArrayToMap '_id', question.answers
+          file.questions = fromArrayToMap '_id', file.questions
+        topic.files = fromArrayToMap '_id', topic.files
+
       app.post '/login', passport.authenticate('local'), (request, response) ->
-        response.send "logged in"
+        topicCodes = request.user.topics
+        Q.ninvoke(request.user, 'populate', 'topics.code')
+        .then (user) ->
+          #Q.ninvoke(user, 'populate', 'topics.code.files.owner')
+        #.then (user) ->
+          user = user.toObject()
+          topics = {}
+          for {code, permission} in user.topics
+            code.permission = permission
+            topics[code._id] = objectify code
+          user.topics = topics
+          getEvents(topicCodes)
+          .then (events) ->
+            user.events = events
+            response.send user
+          , (error) ->
+            response.send error
+          .done()
+        .done()
+
+        
 
 
 
@@ -77,6 +115,7 @@ Adds a topic to the DB
           name: request.body.name
           _id: request.body._id
           files: []
+          types: request.body.types
         topic.save (err) ->
           if err?
             response.send err
@@ -88,39 +127,42 @@ Retrieves a topic from the DB with id code
 -------------------------------------------
 
       app.get '/topics/:code', (request, response) ->
-        topicCode = request.params.code
-        Topic.findById topicCode, (err, docs) ->
-          if err?
-            response.send "not found"
-          else
-            response.send docs
+        getTopic(request.params.code)
+        .then (topic) ->
+          response.send topic
+        , (error) ->
+          response.send error
+
+      getTopic = (topicId) ->
+        Q.ninvoke(Topic, 'findById', topicId)
+        .then (topic) ->
+          topic
 
 
 ---------------------------------------------------
 Adds a list of topics to the user with login given
 ---------------------------------------------------
 
-      app.post '/users/:login', (request, response) ->
-        User.findById request.params.login, (err, user) ->
-          if err?
-            response.send err
-          else
-            topics = request.body.topics
-            for topic in topics
-              user.topics.addToSet topic
-            response.send user
+      # app.post '/users/:login', (request, response) ->
+      #   User.findById request.params.login, (err, user) ->
+      #     if err?
+      #       response.send err
+      #     else
+      #       topics = request.body.topics
+      #       for topic in topics
+      #         user.topics.addToSet topic
+      #       response.send user
 
 ------------------------
 Adds an event to the DB
 ------------------------
 
-      addEvent = (type, model, link, topicCode) ->
+      addEvent = (type, model, url, topicCode) ->
         event = new Event
           model: model
           type: type
           topicCode: topicCode
-        for item in link 
-          event.link.addToSet item
+          url: url
         event.save (err) ->
           if err?
             return err
@@ -132,16 +174,22 @@ Retrieve all the events from the DB
 ------------------------------------
 
       app.get '/events', authenticated, (request, response) ->
-        topicCodes = (code for {code} in request.user.topics)
+        getEvents(request.user.topics)
+        .then (events) ->
+          response.send events
+        , (error) ->
+          response.send error
+     
+      getEvents = (topics) ->
+        topicCodes = (code for {code} in topics)
         Q.ninvoke(
             Event.find({})
             .where('topicCode').in(topicCodes)
+            .select('timestamp')
+            .select('url')
+            .select('type')
             .sort('-timestamp')
           , 'exec')
-        .then (events) ->
-          response.send events
-        .done()
-   
 
 
 --------------------------------------
@@ -152,7 +200,7 @@ Creates and saves a new file to the topics list of files
         Q.ninvoke(Topic, 'findById', topicId)
         .then (topic) ->
           if !topic?
-            throw [404, "topic not found"]
+            throw [404, "topic not found #{topicId}"]
           topic
 
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
@@ -164,16 +212,19 @@ Creates and saves a new file to the topics list of files
           path: request.body.path
           name: request.body.name
           owner: request.body.owner
+          type: request.body.type
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file  
-          addEvent "Added", "File", [request.body._id], request.params.topicId
+          addEvent "Added", "File", "topics/#{request.params.topicId}/files/#{file._id}", request.params.topicId
           topic.save()
         .then ->
           response.send file
         , (error) ->
           response.send 500, error
         .done()
+
+
 
 -------------------------------------------
 Retrieves a file from the DB with id code
@@ -212,7 +263,7 @@ Creates and saves a new question to the DB
           file.questions.addToSet question
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "Question", [request.params.fileId, request.body._id], request.params.topicId
+          addEvent "Added", "Question", "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}", request.params.topicId
           response.send question
         , (error) ->
           response.send error...
@@ -255,7 +306,7 @@ Creates and saves a new answer to the DB
           question.answers.addToSet answer
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent "Added", "Answer", [request.params.fileId, request.params.questionId, request.body._id], request.params.topicId
+            addEvent "Added", "Answer", "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}", request.params.topicId
             response.send question
         , (error) ->
           response.send error...
@@ -294,7 +345,7 @@ Creates and saves a new comment to a question to the DB
           question.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "CommentQ", [request.params.fileId, request.params.questionId, request.body._id], request.params.topicId
+          addEvent "Added", "CommentQ", "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}" , request.params.topicId
           response.send comment
         , (error) ->
           response.send error
@@ -334,7 +385,7 @@ Creates and saves a new comment to an answer to the DB
           answer.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "CommentA", [request.params.fileId, request.params.questionId, request.params.answerId, request.body._id], request.params.topicId
+          addEvent "Added", "CommentA", "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}", request.params.topicId
           response.send comment
         , (error) ->
           response.send error...

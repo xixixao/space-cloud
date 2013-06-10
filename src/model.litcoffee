@@ -20,10 +20,20 @@ We define our models, with appropriate schemas,
         code: {type: String, ref: 'Topic'}
         permission: String
 
+      eventSchema = Schema
+        type: String
+        url: String
+        model: String
+        timestamp: {type: Date, default: Date.now}
+        topicCode: {type: String, ref: 'Topic'}
+      Event = mongoose.model('Event', eventSchema)
+
       userSchema = Schema
         name: String
         _id: {type: String, unique: true, dropDups: true}
         password: String
+        email: String
+        facebook: String
         topics: [topicPermission]
       User = mongoose.model('User', userSchema)
 
@@ -62,13 +72,6 @@ We define our models, with appropriate schemas,
         text: String
       Question = mongoose.model('Question', questionSchema)
 
-      eventSchema = Schema
-        type: String
-        link: [String]
-        model: String
-        timestamp: {type: Date, default: Date.now}
-        topicCode: {type: String, ref: 'Topic'}
-      Event = mongoose.model('Event', eventSchema)
 
       fileSchema = Schema
         _id: {type: String, unique: true} # topic._id-fileid
@@ -77,12 +80,14 @@ We define our models, with appropriate schemas,
         owner: {type: String, ref: 'User'}
         topicCode: {type: String, ref: 'Topic'}
         questions: [questionSchema]
+        type: String
       File = mongoose.model('File', fileSchema)     
       
       topicSchema = Schema
         name: String
         _id: {type: String, unique: true}
         files: [fileSchema]
+        types: [String]
       Topic = mongoose.model('Topic', topicSchema)
       
       {Topic, User, File, Question, CommentA, CommentQ, Answer, Event}

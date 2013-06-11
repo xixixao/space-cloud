@@ -73,26 +73,60 @@ Login validation
             question.answers = fromArrayToMap '_id', question.answers
           file.questions = fromArrayToMap '_id', file.questions
         topic.files = fromArrayToMap '_id', topic.files
+        topic
+
+      getOwners = (user) ->
+        fileOwners = Q.map user.topics, ({code}) ->
+              Q.all [
+                Q.ninvoke(
+                  File
+                  'populate'
+                  code.files
+                  path: 'owner'
+                  select: '_id name'
+                )
+                Q.map code.files, (file) ->
+                  Q.all [
+                    Q.ninvoke(
+                      Question
+                      'populate'
+                      file.questions
+                      path: 'owner'
+                      select: '_id name'
+                    )
+                    Q.map file.questions, (question) ->
+                      Q.all [
+                        Q.ninvoke(
+                          CommentQ
+                          'populate'
+                          question.comments
+                          path: 'owner'
+                          select: '_id name'
+                        )
+                        Q.ninvoke(
+                          Answer
+                          'populate'
+                          question.answers
+                          path: 'owner'
+                          select: '_id name'
+                        )
+                        Q.map question.answers, (answer) ->
+                          Q.ninvoke(
+                            CommentA
+                            'populate'
+                            answer.comments
+                            path: 'owner'
+                            select: '_id name'
+                          )
+                      ]
+                  ]
+              ]
 
       app.post '/login', passport.authenticate('local'), (request, response) ->
         topicCodes = request.user.topics
         Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->
-          fileOwners = Q.map user.topics, ({code}) ->
-            Q.all [
-              Q.ninvoke(File, 'populate', code.files, path: 'owner', select: '_id name')
-              Q.map code.files, (file) ->
-                Q.all [
-                  Q.ninvoke(Question, 'populate', file.questions, path: 'owner', select: '_id name')
-                  Q.map file.questions, (question) ->
-                    Q.all [
-                      Q.ninvoke(CommentQ, 'populate', question.comments, path: 'owner', select: '_id name')
-                      Q.ninvoke(Answer, 'populate', question.answers, path: 'owner', select: '_id name')
-                      Q.map question.answers, (answer) ->
-                        Q.ninvoke(CommentA, 'populate', answer.comments, path: 'owner', select: '_id name')
-                    ]
-                ]
-            ]
+          getOwners(user)
           .then ->
             user
         .then (user) ->
@@ -234,7 +268,12 @@ Creates and saves a new file to the topics list of files
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file  
-          addEvent "Added", "File", "topics/#{request.params.topicId}/files/#{file._id}", request.params.topicId
+          addEvent( 
+            "Added"
+            "File"
+            "topics/#{request.params.topicId}/files/#{file._id}"
+            request.params.topicId
+          )
           topic.save()
         .then ->
           response.send file
@@ -281,7 +320,12 @@ Creates and saves a new question to the DB
           file.questions.addToSet question
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "Question", "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}", request.params.topicId
+          addEvent(
+            "Added"
+            "Question"
+            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
+            request.params.topicId
+          )
           response.send question
         , (error) ->
           response.send error...
@@ -324,7 +368,12 @@ Creates and saves a new answer to the DB
           question.answers.addToSet answer
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent "Added", "Answer", "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}", request.params.topicId
+            addEvent(
+              "Added"
+              "Answer"
+              "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
+              request.params.topicId
+            )
             response.send question
         , (error) ->
           response.send error...
@@ -363,7 +412,12 @@ Creates and saves a new comment to a question to the DB
           question.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "CommentQ", "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}" , request.params.topicId
+          addEvent(
+            "Added"
+            "CommentQ"
+            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}" 
+            request.params.topicId
+          )
           response.send comment
         , (error) ->
           response.send error
@@ -403,7 +457,12 @@ Creates and saves a new comment to an answer to the DB
           answer.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent "Added", "CommentA", "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}", request.params.topicId
+          addEvent(
+            "Added"
+            "CommentA"
+            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
+            request.params.topicId
+          )
           response.send comment
         , (error) ->
           response.send error...

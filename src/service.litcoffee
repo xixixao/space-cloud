@@ -12,8 +12,8 @@ This is the definition of our service, via a RESTful API.
 Finds a user with a given login and returns the details
 -------------------------------------------------------
 
-      app.get '/users/:login', authenticated, (request, response) ->
-        usersFiles(request.params.login)
+      app.get '/users/:username', authenticated, (request, response) ->
+        usersFiles(request.params.username)
         .then (user) ->
           response.send user
         , (error) ->
@@ -55,7 +55,7 @@ Adds a user to the DB - aka SIGN UP
             response.send user
 
 ----------------
-Login validation
+username validation
 ----------------
 
       fromArrayToMap = (idKey, array) ->
@@ -122,7 +122,7 @@ Login validation
                   ]
               ]
 
-      app.post '/login', passport.authenticate('local'), (request, response) ->
+      app.post '/username', passport.authenticate('local'), (request, response) ->
         topicCodes = request.user.topics
         Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->
@@ -145,18 +145,17 @@ Login validation
           .done()
         .done()
 
-        
-
-
 
 Updating user details
 ---------------------
 
-      app.post '/users/:login', authenticated, (request, response) ->
-        request.user.update 
-          name: request.body.name
-          password: request.body.password
-        response.send "User updated"
+      app.post '/users/:username', authenticated, (request, response) ->
+        User.update request.user, name: request.body.name, password: request.body.password, email: request.body.email, facebook:request.body.facebook, (err, numberAffected, res) ->
+          if err?
+            response.send err
+          else
+            response.send request.user
+
 
 -----------------------
 Adds a topic to the DB
@@ -479,7 +478,15 @@ Retrieves a comment from an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
         findCommentA(request, request.params) 
         .then ([topic, file, question, answer, comment]) ->
-          response.send comment
+          Q.ninvoke(
+            CommentA
+            'populate'
+            comment
+            path: 'owner'
+            select: '_id name'
+          )
+          .then (comment) ->
+            response.send comment
         , (error) ->
           response.send error...
         .done()
@@ -507,10 +514,48 @@ Retrieve feeds for a particular user
           response.send questions
         .done()
 
-        # find questions
-        # populate file {topic_id}
+Ranking
 
-        # find user (list of topics inside it)
+      getAnswer = (request, requestParams) ->
+        findAnswer(request, request.params)
+        .then ([topic, file, question, answer]) ->
+          answer
 
-        # on the questions, do topic_id "in" the list of courses
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteUp/:username', authenticated, (request, response) ->
+        Q.ninvoke(User, 'findById', request.params.username)
+        .then (user) ->
+          findAnswer(request, request.params)
+          .then ([topic, file, question, answer]) ->
+            answer.votesFor.addToSet user
+            Q.ninvoke(topic, 'save')
+          .then ->
+            response.send "voted for"
+          , (error) ->
+            response.send error...
+          .done() 
+
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteUp', authenticated, (request, response) ->
+        getAnswer(request, request.params)
+        .then (answer) ->
+          response.send answer.votesFor
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown/:username', authenticated, (request, response) ->
+        Q.ninvoke(User, 'findById', request.params.username)
+        .then (user) ->
+          findAnswer(request, request.params)
+          .then ([topic, file, question, answer]) ->
+            answer.votesAgainst.addToSet user
+            Q.ninvoke(topic, 'save')
+          .then ->
+            response.send "voted against"
+          , (error) ->
+            response.send error...
+          .done() 
+
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown', authenticated, (request, response) ->
+        getAnswer(request, request.params)
+        .then (answer) ->
+          response.send answer.votesAgainst
+
+
 

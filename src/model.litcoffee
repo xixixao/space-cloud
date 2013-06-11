@@ -49,6 +49,8 @@ We define our models, with appropriate schemas,
         rank : Number
         comments: [commentASchema]
         text: String
+        votesFor: [userSchema]
+        votesAgainst: [userSchema]
       Answer = mongoose.model('Answer', answerSchema)
 
       commentQSchema = Schema

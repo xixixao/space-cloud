@@ -38,14 +38,12 @@ We define our models, with appropriate schemas,
       User = mongoose.model('User', userSchema)
 
       commentASchema = Schema
-        _id: {type:String, unique: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         text: String
       CommentA = mongoose.model('CommentA', commentASchema)    
 
       answerSchema = Schema
-        _id: {type:String, unique: true, dropDups: true} 
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         rank : Number
@@ -54,14 +52,12 @@ We define our models, with appropriate schemas,
       Answer = mongoose.model('Answer', answerSchema)
 
       commentQSchema = Schema
-        _id: {type:String, unique: true, dropDups: true} #comment id
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         text: String
       CommentQ = mongoose.model('CommentQ', commentQSchema)
 
       questionSchema = Schema
-        _id: {type:String, unique: true} #question id
         createdTime: {type: Date, default: Date.now}
         modifiedQuestionTime: {type: Date, default: Date.now}
         modifiedTime: {type: Date, default: Date.now}

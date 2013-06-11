@@ -311,7 +311,6 @@ Creates and saves a new question to the DB
 
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         question = new Question
-          _id: request.body._id
           owner: request.body.owner
           filePosition: request.body.filePosition
           text: request.body.text
@@ -326,7 +325,7 @@ Creates and saves a new question to the DB
             "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
             request.params.topicId
           )
-          response.send question
+          response.send question._id
         , (error) ->
           response.send error...
         .done() 
@@ -361,7 +360,6 @@ Creates and saves a new answer to the DB
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
           answer = new Answer
-              _id: request.body._id
               owner: request.body.owner
               rank: request.body.rank
               text: request.body.text
@@ -374,7 +372,7 @@ Creates and saves a new answer to the DB
               "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
               request.params.topicId
             )
-            response.send question
+            response.send answer._id
         , (error) ->
           response.send error...
         .done() 
@@ -404,7 +402,6 @@ Creates and saves a new comment to a question to the DB
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/comments', authenticated, (request, response) ->
         comment = new CommentQ
-          _id: request.body._id
           owner: request.body.owner
           text: request.body.text
         findQuestion(request, request.params)
@@ -418,7 +415,7 @@ Creates and saves a new comment to a question to the DB
             "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}" 
             request.params.topicId
           )
-          response.send comment
+          response.send comment._id
         , (error) ->
           response.send error
         .done() 
@@ -449,7 +446,6 @@ Creates and saves a new comment to an answer to the DB
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments', authenticated, (request, response) ->
         comment = new CommentA
-          _id: request.body._id
           owner: request.body.owner
           text: request.body.text
         findAnswer(request, request.params)
@@ -463,7 +459,7 @@ Creates and saves a new comment to an answer to the DB
             "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
             request.params.topicId
           )
-          response.send comment
+          response.send comment._id
         , (error) ->
           response.send error...
         .done() 

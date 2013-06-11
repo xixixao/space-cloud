@@ -78,8 +78,24 @@ Login validation
         topicCodes = request.user.topics
         Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->
-          #Q.ninvoke(user, 'populate', 'topics.code.files.owner')
-        #.then (user) ->
+          fileOwners = Q.map user.topics, ({code}) ->
+            Q.all [
+              Q.ninvoke(File, 'populate', code.files, path: 'owner', select: '_id name')
+              Q.map code.files, (file) ->
+                Q.all [
+                  Q.ninvoke(Question, 'populate', file.questions, path: 'owner', select: '_id name')
+                  Q.map file.questions, (question) ->
+                    Q.all [
+                      Q.ninvoke(CommentQ, 'populate', question.comments, path: 'owner', select: '_id name')
+                      Q.ninvoke(Answer, 'populate', question.answers, path: 'owner', select: '_id name')
+                      Q.map question.answers, (answer) ->
+                        Q.ninvoke(CommentA, 'populate', answer.comments, path: 'owner', select: '_id name')
+                    ]
+                ]
+            ]
+          .then ->
+            user
+        .then (user) ->
           user = user.toObject()
           topics = {}
           for {code, permission} in user.topics
@@ -103,7 +119,9 @@ Updating user details
 ---------------------
 
       app.post '/users/:login', authenticated, (request, response) ->
-        request.user.update ({name: request.body.name , password: request.body.password })
+        request.user.update 
+          name: request.body.name
+          password: request.body.password
         response.send "User updated"
 
 -----------------------

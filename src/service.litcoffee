@@ -522,17 +522,15 @@ Ranking
           answer
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteUp/:username', authenticated, (request, response) ->
-        Q.ninvoke(User, 'findById', request.params.username)
-        .then (user) ->
-          findAnswer(request, request.params)
-          .then ([topic, file, question, answer]) ->
-            answer.votesFor.addToSet user
-            Q.ninvoke(topic, 'save')
-          .then ->
-            response.send "voted for"
-          , (error) ->
-            response.send error...
-          .done() 
+        findAnswer(request, request.params)
+        .then ([topic, file, question, answer]) ->
+          answer.votesFor.addToSet request.params.username
+          Q.ninvoke(topic, 'save')
+        .then ->
+          response.send "voted for"
+        , (error) ->
+          response.send error...
+        .done() 
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteUp', authenticated, (request, response) ->
         getAnswer(request, request.params)
@@ -540,22 +538,20 @@ Ranking
           response.send answer.votesFor
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown/:username', authenticated, (request, response) ->
-        Q.ninvoke(User, 'findById', request.params.username)
-        .then (user) ->
-          findAnswer(request, request.params)
-          .then ([topic, file, question, answer]) ->
-            answer.votesAgainst.addToSet user
-            Q.ninvoke(topic, 'save')
-          .then ->
-            response.send "voted against"
-          , (error) ->
-            response.send error...
-          .done() 
+        findAnswer(request, request.params)
+        .then ([topic, file, question, answer]) ->
+          answer.votesFor.remove request.params.username
+          Q.ninvoke(topic, 'save')
+        .then ->
+          response.send "voted against"
+        , (error) ->
+          response.send error...
+        .done() 
 
-      app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown', authenticated, (request, response) ->
-        getAnswer(request, request.params)
-        .then (answer) ->
-          response.send answer.votesAgainst
+      # app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown', authenticated, (request, response) ->
+      #   getAnswer(request, request.params)
+      #   .then (answer) ->
+      #     response.send answer.votesFor
 
 
 

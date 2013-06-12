@@ -122,7 +122,7 @@ username validation
                   ]
               ]
 
-      app.post '/username', passport.authenticate('local'), (request, response) ->
+      app.post '/login', passport.authenticate('local'), (request, response) ->
         topicCodes = request.user.topics
         Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->

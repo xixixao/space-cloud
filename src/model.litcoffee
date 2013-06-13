@@ -41,7 +41,7 @@ We define our models, with appropriate schemas,
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         text: String
-      CommentA = mongoose.model('CommentA', commentASchema)    
+      CommentA = mongoose.model('CommentA', commentASchema)
 
       answerSchema = Schema
         timestamp: {type: Date, default: Date.now}
@@ -63,7 +63,7 @@ We define our models, with appropriate schemas,
         modifiedQuestionTime: {type: Date, default: Date.now}
         modifiedTime: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        filePosition: String
+        position: String
         answers: [answerSchema]
         comments: [commentQSchema]
         text: String
@@ -78,15 +78,16 @@ We define our models, with appropriate schemas,
         topicCode: {type: String, ref: 'Topic'}
         questions: [questionSchema]
         type: String
-      File = mongoose.model('File', fileSchema)     
-      
+        date: {type: Date}
+      File = mongoose.model('File', fileSchema)
+
       topicSchema = Schema
         name: String
         _id: {type: String, unique: true}
         files: [fileSchema]
         types: [String]
       Topic = mongoose.model('Topic', topicSchema)
-      
+
       {Topic, User, File, Question, CommentA, CommentQ, Answer, Event}
 
 and export them.
@@ -106,17 +107,17 @@ We connect to our test database and erase it.
       db.on "error", (error) ->
         console.error "DB error:(are you running the database?)\n", error
 
-    wipe = ->
-      db = mongoose.connection
-      db.db.dropDatabase()
-
+     wipe = ->
+       db = mongoose.connection
+       Q.map db.collections, (collection) ->
+         Q.ninvoke collection, 'drop'
 
     populate = ->
       user = new models.User
         name: "Michal Srb"
         _id: "ms6611"
         password: "admin"
-        email: "ms6611@imperial.ac.uk"
+        email: "ms6611@erial.ac.uk"
         facebook: "xixixao"
         topics: [
           code: "222"
@@ -131,6 +132,7 @@ We connect to our test database and erase it.
               _id: 'intro'
               name: "Introduction and Methods"
               type: 'Notes'
+              date: new Date("2013/06/05")
               questions: [
                   owner: "ms6611"
                   text: "I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!! I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!! I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!! I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!!"
@@ -174,86 +176,107 @@ We connect to our test database and erase it.
               _id: 'uninformed-search'
               name: "Uninformed Search"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'informed-search'
               name: "Informed Search"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'adversarial-search'
               name: "Adversarial Search"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'planning-and logic'
               name: "Planning and Logic"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'planning-algorithms'
               name: "Planning Algorithms"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'krr'
               name: "KRR"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'semanticweb'
               name: "SemanticWeb"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'nmr'
               name: "NMR"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'introlearning'
               name: "IntroLearning"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'reinflearning'
               name: "ReinfLearning"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'abdarg'
               name: "AbdArg"
               type: 'Notes'
+              date: new Date("2013/06/05")
             ,
               _id: 'tutorial-1'
               name: "Tutorial 1"
               type: 'Tutorials'
+              date: new Date("2013/06/05")
             ,
               _id: 'tutorial-2'
               name: "Tutorial 2"
               type: 'Tutorials'
+              date: new Date("2013/06/05")
             ,
               _id: 'tutorial-3'
               name: "Tutorial 3"
               type: 'Tutorials'
+              date: new Date("2013/06/05")
             ,
               _id: 'tutorial-4'
               name: "Tutorial 4"
               type: 'Tutorials'
+              date: new Date("2013/06/05")
             ,
               _id: 'tutorial-5'
               name: "Tutorial 5"
               type: 'Tutorials'
+              date: new Date("2013/06/05")
             ,
               _id: 'solution-1'
               name: "Solution 1"
               type: 'Solutions'
+              date: new Date("2013/06/05")
             ,
               _id: 'solution-2'
               name: "Solution 2"
               type: 'Solutions'
+              date: new Date("2013/06/05")
             ,
               _id: 'solution-3'
               name: "Solution 3"
               type: 'Solutions'
+              date: new Date("2013/06/05")
             ,
               _id: 'solution-4'
               name: "Solution 4"
               type: 'Solutions'
+              date: new Date("2013/06/05")
             ,
               _id: 'solution-5'
               name: "Solution 5"
               type: 'Solutions'
+              date: new Date("2013/06/05")
           ]
         Q.ninvoke(topic, 'save')
       #          "223":
@@ -275,5 +298,7 @@ And execute everything in correct synchronized order. Node will take care of exe
 
     connect()
     wipe()
-    populate()
+    setTimeout ->
+      populate()
+    , 2000
 

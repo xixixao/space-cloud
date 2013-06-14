@@ -173,6 +173,7 @@ Adds a topic to the DB
           else
             response.send topic
 
+
 -------------------------------------------
 Retrieves a topic from the DB with id code
 -------------------------------------------
@@ -253,6 +254,13 @@ Creates and saves a new file to the topics list of files
           if !topic?
             throw [404, "topic not found #{topicId}"]
           topic
+
+      app.get '/topics/:topicId/files', authenticated, (request, response) ->
+        findTopic(request.params)
+        .then (topic) ->
+          response.send topic.files
+        , (error) ->
+          response.send error
 
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
         if !canWrite request, request.params.topicId

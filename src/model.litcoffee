@@ -46,7 +46,6 @@ We define our models, with appropriate schemas,
       answerSchema = Schema
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
-        rank : Number
         comments: [commentASchema]
         text: String
         votesFor: [{type: String, ref: 'User'}]
@@ -143,30 +142,24 @@ We connect to our test database and erase it.
                     ,
                       owner: "ms6611"
                       text: "Or just a stupid one."
-                    ]
+                    ,
+                      owner: "ms6611"
+                      text: "Or just a stupid one."
+                  ]
                   answers: [
                       owner: "ms6611"
-                      text: """<p>\"a brief summary of the user interactions in your program\"
-                        <p>What we want top see here is a high-level discussion of what interactions take place between the users and the app.
-                        You don't need to go into too much detail, just make the purpose and use of the app clear.
-                        <br>
-                        <p>So, for example, if your app were the exam communications system example from the spec then the user interactions would include:<br>
-                        > Invigilators can communicate silently during an exam<br>
-                        > Invigilators can request assistance in their room<br>
-                        > Invigilators can check the status of all currently running exams<br>
-                        ...etc...
-                        <p>If your app is a game, then we want a brief summary of the rules and how the user plays the game."""
+                      text: "I think the answer is 'awesome'."
                       comments: [
                           owner: "ms6611"
                           text: "A lion?"
                         ,
                           owner: "ms6611"
                           text: "A cat for sure."
-                        ]
+                      ]
                     ,
                       owner: "ms6611"
                       text: "I think it is concerned with the abdominal spacial features of enlarged natural language complexities."
-                    ]
+                  ]
                 ,
                   owner: "ms6611"
                   text: "How come?"

@@ -266,7 +266,7 @@ Creates and saves a new file to the topics list of files
           type: request.body.type
         findTopic(request.params)
         .then (topic) ->
-          topic.files.addToSet file  
+          topic.files.addToSet file
           addEvent( 
             "Added"
             "File"

@@ -290,8 +290,8 @@ We connect to our test database and erase it.
 And execute everything in correct synchronized order. Node will take care of executing this only once.
 
     connect()
-    wipe()
-    setTimeout ->
-      populate()
-    , 2000
+    #wipe()
+    #setTimeout ->
+    #  populate()
+    #, 2000
 

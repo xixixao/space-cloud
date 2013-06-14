@@ -231,7 +231,7 @@ Retrieve all the events from the DB
           response.send events
         , (error) ->
           response.send error
-     
+
       getEvents = (topics) ->
         topicCodes = (code for {code} in topics)
         Q.ninvoke(
@@ -276,7 +276,7 @@ Creates and saves a new file to the topics list of files
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file
-          addEvent( 
+          addEvent(
             "Added"
             "File"
             "topics/#{request.params.topicId}/files/#{file._id}"
@@ -296,7 +296,7 @@ Retrieves a file from the DB with id code
 -------------------------------------------
 
       findFile = (request, {topicId, fileId}) ->
-   
+
         findTopic({topicId})
         .then (topic) ->
           if !canRead request, topicId
@@ -309,9 +309,9 @@ Retrieves a file from the DB with id code
           response.send file
         , (error) ->
           response.send error...
-        .done()  
+        .done()
 
-        
+
 ------------------------------------------
 Creates and saves a new question to the DB
 ------------------------------------------
@@ -333,10 +333,10 @@ Creates and saves a new question to the DB
             "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
             request.params.topicId
           )
-          response.send question._id
+          response.send question
         , (error) ->
           response.send error...
-        .done() 
+        .done()
 
 
 -------------------------------------------
@@ -356,9 +356,9 @@ Retrieves a question from the DB with id code
         , (error) ->
           response.send error...
         .done()
-          
+
       app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
-        findQuestion(request, request.params) 
+        findQuestion(request, request.params)
         .then ([topic, file, question]) ->
           response.send question
         , (error) ->
@@ -388,10 +388,10 @@ Creates and saves a new answer to the DB
               "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
               request.params.topicId
             )
-            response.send answer._id
+            response.send answer
         , (error) ->
           response.send error...
-        .done() 
+        .done()
 
 -------------------------------------------
 Retrieves an answer from the DB with id code
@@ -412,13 +412,13 @@ Retrieves an answer from the DB with id code
         .done()
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
-        findAnswer(request, request.params) 
+        findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
           response.send answer
         , (error) ->
           response.send error...
         .done()
-            
+
 
 -------------------------------------------------------
 Creates and saves a new comment to a question to the DB
@@ -436,14 +436,14 @@ Creates and saves a new comment to a question to the DB
           addEvent(
             "Added"
             "CommentQ"
-            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}" 
+            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}"
             request.params.topicId
           )
-          response.send comment._id
+          response.send comment
         , (error) ->
           response.send error
-        .done() 
-        
+        .done()
+
 
 ------------------------------------------------------------
 Retrieves a comment from a question from the DB with id code
@@ -456,7 +456,7 @@ Retrieves a comment from a question from the DB with id code
           [topic, file, question, comment]
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments', authenticated, (request, response) ->
-        findCommentQ(request, request.params) 
+        findCommentQ(request, request.params)
         .then ([topic, file, question, comment]) ->
           response.send question.comments
         , (error) ->
@@ -464,7 +464,7 @@ Retrieves a comment from a question from the DB with id code
         .done()
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
-        findCommentQ(request, request.params) 
+        findCommentQ(request, request.params)
         .then ([topic, file, question, comment]) ->
           response.send comment
         , (error) ->
@@ -491,17 +491,17 @@ Creates and saves a new comment to an answer to the DB
             "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
             request.params.topicId
           )
-          response.send comment._id
+          response.send comment
         , (error) ->
           response.send error...
-        .done() 
-        
-        
+        .done()
+
+
 
 ------------------------------------------------------------
 Retrieves a comment from an answer from the DB with id code
 ------------------------------------------------------------
-      
+
       findCommentA = (request, {topicId, fileId, questionId, answerId, commentId}) ->
         findAnswer(request, {topicId, fileId, questionId, answerId})
         .then ([topic, file, question, answer]) ->
@@ -509,7 +509,7 @@ Retrieves a comment from an answer from the DB with id code
           [topic, file, question, answer, comment]
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments', authenticated, (request, response) ->
-        findCommentA(request, request.params) 
+        findCommentA(request, request.params)
         .then ([topic, file, question, answer, comment]) ->
           response.send answer.comments
         , (error) ->
@@ -517,7 +517,7 @@ Retrieves a comment from an answer from the DB with id code
         .done()
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
-        findCommentA(request, request.params) 
+        findCommentA(request, request.params)
         .then ([topic, file, question, answer, comment]) ->
           Q.ninvoke(
             CommentA
@@ -571,7 +571,7 @@ Ranking
           response.send "voted for"
         , (error) ->
           response.send error...
-        .done() 
+        .done()
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteUp', authenticated, (request, response) ->
         getAnswer(request, request.params)
@@ -587,7 +587,7 @@ Ranking
           response.send "voted against"
         , (error) ->
           response.send error...
-        .done() 
+        .done()
 
       # app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown', authenticated, (request, response) ->
       #   getAnswer(request, request.params)

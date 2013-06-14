@@ -455,6 +455,14 @@ Retrieves a comment from a question from the DB with id code
           comment = question.comments.id commentId
           [topic, file, question, comment]
 
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments', authenticated, (request, response) ->
+        findCommentQ(request, request.params) 
+        .then ([topic, file, question, comment]) ->
+          response.send question.comments
+        , (error) ->
+          response.send error...
+        .done()
+
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
         findCommentQ(request, request.params) 
         .then ([topic, file, question, comment]) ->
@@ -499,6 +507,14 @@ Retrieves a comment from an answer from the DB with id code
         .then ([topic, file, question, answer]) ->
           comment = answer.comments.id commentId
           [topic, file, question, answer, comment]
+
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments', authenticated, (request, response) ->
+        findCommentA(request, request.params) 
+        .then ([topic, file, question, answer, comment]) ->
+          response.send answer.comments
+        , (error) ->
+          response.send error...
+        .done()
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
         findCommentA(request, request.params) 

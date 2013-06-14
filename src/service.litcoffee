@@ -261,6 +261,7 @@ Creates and saves a new file to the topics list of files
           response.send topic.files
         , (error) ->
           response.send error
+        .done()
 
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
         if !canWrite request, request.params.topicId
@@ -348,6 +349,14 @@ Retrieves a question from the DB with id code
           question = file.questions.id questionId
           [topic, file, question]
 
+      app.get '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
+        findQuestion(request, request.params)
+        .then ([topic, file, question]) ->
+          response.send file.questions
+        , (error) ->
+          response.send error...
+        .done()
+          
       app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
         findQuestion(request, request.params) 
         .then ([topic, file, question]) ->
@@ -393,6 +402,14 @@ Retrieves an answer from the DB with id code
         .then ([topic, file, question]) ->
           answer = question.answers.id answerId
           [topic, file, question, answer]
+
+      app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers', authenticated, (request, response) ->
+        findAnswer(request, request.params)
+        .then ([topic, file, question, answer]) ->
+          response.send question.answers
+        , (error) ->
+          response.send error...
+        .done()
 
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
         findAnswer(request, request.params) 

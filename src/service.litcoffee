@@ -5,6 +5,7 @@ This is the definition of our service, via a RESTful API.
     passport = require("passport")
     {Topic, User, File, CommentA, CommentQ, Question, Answer, Event} = require './model'
     {canRead, canWrite, authenticated} = require './authentication'
+    path = require 'path'
 
     module.exports = (app) ->
 
@@ -280,6 +281,10 @@ Creates and saves a new file to the topics list of files
           response.send error
         .done()
 
+      app.post '/topics/:topicId/upload', authenticated, (request, response) ->
+        response.send do ->
+          for file in request.files.form.files[0]
+            tmpName: path.basename file.path
 
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
         if !canWrite request, request.params.topicId
@@ -304,6 +309,7 @@ Creates and saves a new file to the topics list of files
         .then ->
           response.send file
         , (error) ->
+          throw error
           response.send 500, error
         .done()
 

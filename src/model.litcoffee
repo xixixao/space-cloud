@@ -120,7 +120,7 @@ We connect to our test database and erase it.
         facebook: "xixixao"
         topics: [
           code: "222"
-          permission: 'r'
+          permission: 'w'
         ]
       Q.ninvoke(user, 'save').then ->
         topic = new models.Topic

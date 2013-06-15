@@ -122,7 +122,7 @@ username validation
                   ]
               ]
 
-      app.post '/login', passport.authenticate('local'), (request, response) ->
+      batchUserData = (request, response) ->
         topicCodes = request.user.topics
         Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->
@@ -145,12 +145,18 @@ username validation
           .done()
         .done()
 
+      app.post '/login', passport.authenticate('local'), (request, response) ->
+        batchUserData request, response
+
+      app.get '/data', authenticated, (request, response) ->
+        batchUserData request, response
+
 
 Updating user details
 ---------------------
 
       app.post '/users/:username', authenticated, (request, response) ->
-        if request.user != request.params.username
+        if request.user._id != request.params.username
           return response.send 401, "User doesn't have permissions"
         User.update request.user,
           name: request.body.name

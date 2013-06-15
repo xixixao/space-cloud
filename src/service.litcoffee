@@ -532,6 +532,28 @@ Creates and saves a new comment to a question to the DB
           response.send error
         .done()
 
+--------------------------------
+Updates a comment to a question
+--------------------------------
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
+        findCommentQ(request, request.params)
+        .then ([topic, file, question, comment]) ->
+          comment.text = request.body.text
+          question.modifiedTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "CommentQ"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}"
+              request.params.topicId
+            )
+            response.send comment
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 ------------------------------------------------------------
 Retrieves a comment from a question from the DB with id code
@@ -586,7 +608,28 @@ Creates and saves a new comment to an answer to the DB
           response.send error...
         .done()
 
+--------------------------------
+Updates a comment to an answer
+--------------------------------
 
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
+        findCommentA(request, request.params)
+        .then ([topic, file, question, answer, comment]) ->
+          comment.text = request.body.text
+          question.modifiedTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "CommentA"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
+              request.params.topicId
+            )
+            response.send comment
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 ------------------------------------------------------------
 Retrieves a comment from an answer from the DB with id code

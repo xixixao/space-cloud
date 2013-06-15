@@ -280,6 +280,7 @@ Creates and saves a new file to the topics list of files
           response.send error
         .done()
 
+
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
         if !canWrite request, request.params.topicId
           return response.send 401, 'User doesnt have write permission'
@@ -328,6 +329,32 @@ Retrieves a file from the DB with id code
           response.send error...
         .done()
 
+      app.post '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          file.name = request.body.name
+          file.path = request.body.path
+          file.date = request.body.date
+          Q.ninvoke(topic, 'save')
+          .then ->
+            response.send file
+          , (error) ->
+            response.send error
+          .done()
+        .done()
+
+          #Topic.update file,
+          #  name: request.body.name
+          #  path: request.body.path
+          #  date: request.body.date
+        #   , (err, numberAffected, res) ->
+        #     if err?
+        #       response.send err
+        #     else
+        #       response.send file
+        # , (error) ->
+        #   response.send error...
+        # .done()
 
 ------------------------------------------
 Creates and saves a new question to the DB

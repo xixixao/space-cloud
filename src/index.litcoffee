@@ -16,7 +16,7 @@ We use express to reply to different requests in a fully RESTful matter.
     app.configure ->
       app.set 'port', port
       app.use express.cookieParser()
-      app.use express.bodyParser()
+      app.use express.bodyParser(keepExtensions: true)
       app.use express.methodOverride()
       app.use express.compress()
       app.use express.session(secret: 'keyboard cat')

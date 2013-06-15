@@ -329,6 +329,10 @@ Retrieves a file from the DB with id code
           response.send error...
         .done()
 
+---------------
+Updates a file
+---------------
+
       app.post '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
         findFile(request, request.params)
         .then ([topic, file]) ->
@@ -337,29 +341,21 @@ Retrieves a file from the DB with id code
           file.date = request.body.date
           Q.ninvoke(topic, 'save')
           .then ->
+            addEvent(
+              "Modified"
+              "File"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}"
+              request.params.topicId
+            )
             response.send file
           , (error) ->
             response.send error
           .done()
         .done()
 
-          #Topic.update file,
-          #  name: request.body.name
-          #  path: request.body.path
-          #  date: request.body.date
-        #   , (err, numberAffected, res) ->
-        #     if err?
-        #       response.send err
-        #     else
-        #       response.send file
-        # , (error) ->
-        #   response.send error...
-        # .done()
-
 ------------------------------------------
 Creates and saves a new question to the DB
 ------------------------------------------
-
 
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         question = new Question
@@ -382,6 +378,28 @@ Creates and saves a new question to the DB
           response.send error...
         .done()
 
+-------------------
+Updates a question
+-------------------
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
+        findQuestion(request, request.params)
+        .then ([topic, file, question]) ->
+          question.text = request.body.text
+          question.modifiedQuestionTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "Question"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
+              request.params.topicId
+            )
+            response.send question
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 -------------------------------------------
 Retrieves a question from the DB with id code

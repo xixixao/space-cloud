@@ -404,7 +404,9 @@ Retrieves a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
-          response.send question
+          populateOwner(Question, question)
+          .then (question) ->
+            response.send question
         , (error) ->
           response.send error...
         .done()
@@ -413,8 +415,6 @@ Retrieves a question from the DB with id code
 ------------------------------------------
 Creates and saves a new answer to the DB
 ------------------------------------------
-
-
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers', authenticated, (request, response) ->
         findQuestion(request, request.params)
@@ -458,7 +458,9 @@ Retrieves an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
-          response.send answer
+          populateOwner(Answer, answer)
+          .then (answer) ->
+            response.send answer
         , (error) ->
           response.send error...
         .done()
@@ -510,7 +512,9 @@ Retrieves a comment from a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
         findCommentQ(request, request.params)
         .then ([topic, file, question, comment]) ->
-          response.send comment
+          populateOwner(CommentQ, comment)
+          .then (comment) ->
+            response.send comment
         , (error) ->
           response.send error...
         .done()
@@ -546,6 +550,15 @@ Creates and saves a new comment to an answer to the DB
 Retrieves a comment from an answer from the DB with id code
 ------------------------------------------------------------
 
+      populateOwner = (model, type) ->
+        Q.ninvoke(
+            model
+            'populate'
+            type
+            path: 'owner'
+            select: '_id name'
+          )
+
       findCommentA = (request, {topicId, fileId, questionId, answerId, commentId}) ->
         findAnswer(request, {topicId, fileId, questionId, answerId})
         .then ([topic, file, question, answer]) ->
@@ -563,13 +576,7 @@ Retrieves a comment from an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
         findCommentA(request, request.params)
         .then ([topic, file, question, answer, comment]) ->
-          Q.ninvoke(
-            CommentA
-            'populate'
-            comment
-            path: 'owner'
-            select: '_id name'
-          )
+          populateOwner(CommentA, comment)
           .then (comment) ->
             response.send comment
         , (error) ->

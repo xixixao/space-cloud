@@ -6,7 +6,8 @@
   	"mongoose": "*",
   	"q": "*",
     "passport": "*",
-    "passport-local": "*"
+    "passport-local": "*",
+    "mkdirp": "*"
   },
   "devDependencies": {
     "coffee-script": "*",

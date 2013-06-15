@@ -2,7 +2,8 @@ This is our backend server.
 
     express = require 'express'
     service = require './service'
-    passport = require("passport")
+    passport = require 'passport'
+    mkdirp = require 'mkdirp'
 
 We use express to reply to different requests in a fully RESTful matter.
 
@@ -14,9 +15,13 @@ We use express to reply to different requests in a fully RESTful matter.
       console.log "Express server listening on port %d in '%s' mode", server.address().port, app.settings.env
 
     app.configure ->
+      uploadDir = __dirname + "/public/uploads"
+      mkdirp.sync uploadDir
+
       app.set 'port', port
       app.use express.cookieParser()
-      app.use express.bodyParser(keepExtensions: true)
+      app.use express.bodyParser(keepExtensions: true, uploadDir: uploadDir)
+      app.set 'uploadDir', uploadDir
       app.use express.methodOverride()
       app.use express.compress()
       app.use express.session(secret: 'keyboard cat')

@@ -6,6 +6,9 @@ This is the definition of our service, via a RESTful API.
     {Topic, User, File, CommentA, CommentQ, Question, Answer, Event} = require './model'
     {canRead, canWrite, authenticated} = require './authentication'
     path = require 'path'
+    fs = require 'fs'
+    os = require 'os'
+    mkdirp = Q.denodeify require 'mkdirp'
 
     module.exports = (app) ->
 
@@ -36,6 +39,16 @@ Finds a user with a given login and returns the details
             user.topics[i].code.files = files
           .then ->
             user
+
+
+Serving files
+
+      app.get '/files/:topicId/:fileName', authenticated, (request, response) ->
+        {topicId, fileName} = request.params
+        response.sendFile path.join(__dirname, "files/#{topicId}/#{fileName}"), (err) ->
+          response.send 404, "File not found"
+
+
 
 ----------------------
 Adds a user to the DB - aka SIGN UP
@@ -283,19 +296,33 @@ Creates and saves a new file to the topics list of files
 
       app.post '/topics/:topicId/upload', authenticated, (request, response) ->
         response.send do ->
-          for file in request.files.form.files[0]
+          files = if Array.isArray request.files.form.files[0]
+            request.files.form.files[0]
+          else
+            request.files.form.files
+          for file in files
             tmpName: path.basename file.path
 
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
         if !canWrite request, request.params.topicId
           return response.send 401, 'User doesnt have write permission'
 
+        topicDir = path.join __dirname, "files/#{request.params.topicId}"
+        filePath = path.join(topicDir, request.body.name)
+        fileSaved = mkdirp(topicDir)
+        .then ->
+          console.log path.join(app.get('uploadDir'), request.body.tmpName)
+          console.log fs.statSync path.join app.get('uploadDir'), request.body.tmpName
+          console.log fs.renameSync path.join(app.get('uploadDir'), request.body.tmpName),
+            filePath
+
         file = new File
           _id: request.body._id
-          path: request.body.path
+          path: filePath
           name: request.body.name
           owner: request.body.owner
           type: request.body.type
+          date: request.body.date
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file
@@ -305,12 +332,13 @@ Creates and saves a new file to the topics list of files
             "topics/#{request.params.topicId}/files/#{file._id}"
             request.params.topicId
           )
-          topic.save()
-        .then ->
-          response.send file
-        , (error) ->
-          throw error
-          response.send 500, error
+          Q.ninvoke(topic, 'save')
+          .then ->
+            response.send file
+          , (error) ->
+            throw error
+            response.send 500, error
+          .done()
         .done()
 
 

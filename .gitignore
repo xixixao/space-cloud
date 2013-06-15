@@ -20,6 +20,8 @@ what
 # Output folder
 /public
 /dist
+/lib/cloud/public
+/lib/cloud/files
 
 # Ignore db
 /db

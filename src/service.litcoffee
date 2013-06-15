@@ -283,10 +283,7 @@ Creates and saves a new file to the topics list of files
 
       app.post '/topics/:topicId/upload', authenticated, (request, response) ->
         response.send do ->
-          console.log request.files.form.files.length
           for file in request.files.form.files[0]
-            console.log file
-            console.log file.path
             tmpName: path.basename file.path
 
       app.post '/topics/:topicId/files', authenticated, (request, response) ->
@@ -338,17 +335,53 @@ Retrieves a file from the DB with id code
           response.send error...
         .done()
 
+--------------
+Delete a file
+--------------
+
+      app.delete '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          topic.files.pull file
+          response.send topic
+        , (error) ->
+          response.send error...
+        .done()
+
+---------------
+Updates a file
+---------------
+
+      app.post '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          file.name = request.body.name
+          file.path = request.body.path
+          file.date = request.body.date
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "File"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}"
+              request.params.topicId
+            )
+            response.send file
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 ------------------------------------------
 Creates and saves a new question to the DB
 ------------------------------------------
-
 
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         question = new Question
           owner: request.body.owner
           filePosition: request.body.filePosition
           text: request.body.text
+          createdTime: new Date()
         findFile(request, request.params)
         .then ([topic, file]) ->
           file.questions.addToSet question
@@ -365,6 +398,41 @@ Creates and saves a new question to the DB
           response.send error...
         .done()
 
+------------------
+Delete a question
+------------------
+
+      app.delete '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
+        findQuestion(request, request.params)
+        .then ([topic, file, question]) ->
+          file.questions.pull question
+          response.send file
+        , (error) ->
+          response.send error...
+        .done()
+
+-------------------
+Updates a question
+-------------------
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
+        findQuestion(request, request.params)
+        .then ([topic, file, question]) ->
+          question.text = request.body.text
+          question.modifiedQuestionTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "Question"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
+              request.params.topicId
+            )
+            response.send question
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 -------------------------------------------
 Retrieves a question from the DB with id code
@@ -387,7 +455,9 @@ Retrieves a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
-          response.send question
+          populateOwner(Question, question)
+          .then (question) ->
+            response.send question
         , (error) ->
           response.send error...
         .done()
@@ -396,8 +466,6 @@ Retrieves a question from the DB with id code
 ------------------------------------------
 Creates and saves a new answer to the DB
 ------------------------------------------
-
-
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers', authenticated, (request, response) ->
         findQuestion(request, request.params)
@@ -418,6 +486,42 @@ Creates and saves a new answer to the DB
             response.send answer
         , (error) ->
           response.send error...
+        .done()
+
+------------------
+Delete an answer
+------------------
+
+      # app.delete '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
+      #   findAnswer(request, request.params)
+      #   .then ([topic, file, question, answer]) ->
+      #     file.questions.answers.pull question
+      #     response.send file
+      #   , (error) ->
+      #     response.send error...
+      #   .done()
+
+-------------------
+Updates an answer
+-------------------
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
+        findAnswer(request, request.params)
+        .then ([topic, file, question, answer]) ->
+          answer.text = request.body.text
+          question.modifiedTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "Answer"
+              "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
+              request.params.topicId
+            )
+            response.send answer
+          , (error) ->
+            response.send error
+          .done()
         .done()
 
 -------------------------------------------
@@ -441,7 +545,9 @@ Retrieves an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
-          response.send answer
+          populateOwner(Answer, answer)
+          .then (answer) ->
+            response.send answer
         , (error) ->
           response.send error...
         .done()
@@ -471,6 +577,28 @@ Creates and saves a new comment to a question to the DB
           response.send error
         .done()
 
+--------------------------------
+Updates a comment to a question
+--------------------------------
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
+        findCommentQ(request, request.params)
+        .then ([topic, file, question, comment]) ->
+          comment.text = request.body.text
+          question.modifiedTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "CommentQ"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}"
+              request.params.topicId
+            )
+            response.send comment
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 ------------------------------------------------------------
 Retrieves a comment from a question from the DB with id code
@@ -493,7 +621,9 @@ Retrieves a comment from a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
         findCommentQ(request, request.params)
         .then ([topic, file, question, comment]) ->
-          response.send comment
+          populateOwner(CommentQ, comment)
+          .then (comment) ->
+            response.send comment
         , (error) ->
           response.send error...
         .done()
@@ -523,11 +653,41 @@ Creates and saves a new comment to an answer to the DB
           response.send error...
         .done()
 
+--------------------------------
+Updates a comment to an answer
+--------------------------------
 
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
+        findCommentA(request, request.params)
+        .then ([topic, file, question, answer, comment]) ->
+          comment.text = request.body.text
+          question.modifiedTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "CommentA"
+              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
+              request.params.topicId
+            )
+            response.send comment
+          , (error) ->
+            response.send error
+          .done()
+        .done()
 
 ------------------------------------------------------------
 Retrieves a comment from an answer from the DB with id code
 ------------------------------------------------------------
+
+      populateOwner = (model, type) ->
+        Q.ninvoke(
+            model
+            'populate'
+            type
+            path: 'owner'
+            select: '_id name'
+          )
 
       findCommentA = (request, {topicId, fileId, questionId, answerId, commentId}) ->
         findAnswer(request, {topicId, fileId, questionId, answerId})
@@ -546,13 +706,7 @@ Retrieves a comment from an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
         findCommentA(request, request.params)
         .then ([topic, file, question, answer, comment]) ->
-          Q.ninvoke(
-            CommentA
-            'populate'
-            comment
-            path: 'owner'
-            select: '_id name'
-          )
+          populateOwner(CommentA, comment)
           .then (comment) ->
             response.send comment
         , (error) ->
@@ -608,7 +762,7 @@ Ranking
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown/:username', authenticated, (request, response) ->
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
-          answer.votesFor.remove request.params.username
+          answer.votesFor.pull request.params.username
           Q.ninvoke(topic, 'save')
         .then ->
           response.send "voted against"

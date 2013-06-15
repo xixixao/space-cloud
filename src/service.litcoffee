@@ -150,7 +150,14 @@ Updating user details
 ---------------------
 
       app.post '/users/:username', authenticated, (request, response) ->
-        User.update request.user, name: request.body.name, password: request.body.password, email: request.body.email, facebook:request.body.facebook, (err, numberAffected, res) ->
+        if request.user != request.params.username
+          return response.send 401, "User doesn't have permissions"
+        User.update request.user,
+          name: request.body.name
+          password: request.body.password
+          email: request.body.email
+          facebook:request.body.facebook
+        , (err, numberAffected, res) ->
           if err?
             response.send err
           else

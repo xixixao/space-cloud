@@ -392,6 +392,19 @@ Creates and saves a new question to the DB
           response.send error...
         .done()
 
+------------------
+Delete a question
+------------------
+
+      app.delete '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
+        findQuestion(request, request.params)
+        .then ([topic, file, question]) ->
+          file.questions.pull question
+          response.send file
+        , (error) ->
+          response.send error...
+        .done()
+
 -------------------
 Updates a question
 -------------------
@@ -468,6 +481,19 @@ Creates and saves a new answer to the DB
         , (error) ->
           response.send error...
         .done()
+
+------------------
+Delete an answer
+------------------
+
+      # app.delete '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
+      #   findAnswer(request, request.params)
+      #   .then ([topic, file, question, answer]) ->
+      #     file.questions.answers.pull question
+      #     response.send file
+      #   , (error) ->
+      #     response.send error...
+      #   .done()
 
 -------------------
 Updates an answer

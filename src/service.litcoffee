@@ -329,6 +329,19 @@ Retrieves a file from the DB with id code
           response.send error...
         .done()
 
+--------------
+Delete a file
+--------------
+
+      app.delete '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
+        findFile(request, request.params)
+        .then ([topic, file]) ->
+          topic.files.pull file
+          response.send topic
+        , (error) ->
+          response.send error...
+        .done()
+
 ---------------
 Updates a file
 ---------------
@@ -717,7 +730,7 @@ Ranking
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/voteDown/:username', authenticated, (request, response) ->
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
-          answer.votesFor.remove request.params.username
+          answer.votesFor.pull request.params.username
           Q.ninvoke(topic, 'save')
         .then ->
           response.send "voted against"

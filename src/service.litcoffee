@@ -191,9 +191,13 @@ Adds a topic to the DB
 Retrieves a topic from the DB with id code
 -------------------------------------------
 
-      app.get '/topics/:code', (request, response) ->
+      app.get '/topics/:code', authenticated, (request, response) ->
         getTopic(request.params.code)
         .then (topic) ->
+          topic = topic.toObject()
+          topic.permission = do ->
+            for {code, permission} in request.user.topics when code is topic._id
+              return permission
           response.send topic
         , (error) ->
           response.send error

@@ -362,6 +362,7 @@ Creates and saves a new question to the DB
           owner: request.body.owner
           filePosition: request.body.filePosition
           text: request.body.text
+          createdTime: new Date()
         findFile(request, request.params)
         .then ([topic, file]) ->
           file.questions.addToSet question
@@ -453,6 +454,29 @@ Creates and saves a new answer to the DB
             response.send answer
         , (error) ->
           response.send error...
+        .done()
+
+-------------------
+Updates an answer
+-------------------
+
+      app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
+        findAnswer(request, request.params)
+        .then ([topic, file, question, answer]) ->
+          answer.text = request.body.text
+          question.modifiedTime = new Date() 
+          Q.ninvoke(topic, 'save')
+          .then ->
+            addEvent(
+              "Modified"
+              "Answer"
+              "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
+              request.params.topicId
+            )
+            response.send answer
+          , (error) ->
+            response.send error
+          .done()
         .done()
 
 -------------------------------------------

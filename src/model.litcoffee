@@ -58,9 +58,9 @@ We define our models, with appropriate schemas,
       CommentQ = mongoose.model('CommentQ', commentQSchema)
 
       questionSchema = Schema
-        createdTime: {type: Date, default: Date.now}
-        modifiedQuestionTime: {type: Date, default: Date.now}
-        modifiedTime: {type: Date, default: Date.now}
+        createdTime: {type: Date}
+        modifiedQuestionTime: {type: Date}
+        modifiedTime: {type: Date}
         owner: {type: String, ref: 'User'}
         position: String
         answers: [answerSchema]

@@ -468,6 +468,14 @@ Creates and saves a new answer to the DB
               owner: request.body.owner
               rank: request.body.rank
               text: request.body.text
+          # find thepermission for the topic given and if it's w set priority to 1
+          permission = do ->
+            for {code, permission} in request.user.topics when code is topic._id
+              return permission
+          if permission == 'w'
+            answer.priority = 1
+          else
+            answer.priority = 0
           question.answers.addToSet answer
           Q.ninvoke(topic, 'save')
           .then ->

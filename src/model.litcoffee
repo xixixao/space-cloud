@@ -49,6 +49,7 @@ We define our models, with appropriate schemas,
         comments: [commentASchema]
         text: String
         votesFor: [{type: String, ref: 'User'}]
+        priority: Number
       Answer = mongoose.model('Answer', answerSchema)
 
       commentQSchema = Schema
@@ -67,7 +68,6 @@ We define our models, with appropriate schemas,
         comments: [commentQSchema]
         text: String
       Question = mongoose.model('Question', questionSchema)
-
 
       fileSchema = Schema
         _id: {type: String, unique: true} # topic._id-fileid

@@ -1,4 +1,5 @@
 mongoose = require 'mongoose'
+Q = require 'q'
 counter_name = null
 db = null
 
@@ -29,7 +30,7 @@ exports.model = (modelName, schema) ->
   schema.add
     _id: Number
 
-  schema.pre 'save', (next) ->
+  schema.methods.generateId = (next) ->
     Counter.collection.findAndModify
       field: model_name, [], {$inc: {c: 1}}
         new: true

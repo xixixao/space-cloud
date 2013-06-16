@@ -360,7 +360,7 @@ Creates and saves a new file to the topics list of files
           _id: request.body._id
           path: filePath
           name: request.body.name
-          owner: request.body.owner
+          owner: request.user._id
           type: request.body.type
           date: request.body.date
         findTopic(request.params)
@@ -438,11 +438,13 @@ Creates and saves a new question to the DB
 
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         question = new Question
-          owner: request.body.owner
+          owner: request.user._id
           position: request.body.position
           text: request.body.text
           createdTime: new Date()
-        findFile(request, request.params)
+        Q.ninvoke(question, 'generateId')
+        .then ->
+          findFile(request, request.params)
         .then ([topic, file]) ->
           file.questions.addToSet question
           Q.ninvoke(topic, 'save')
@@ -452,6 +454,7 @@ Creates and saves a new question to the DB
             questionId: question._id
           response.send question
         , (error) ->
+          throw error
           response.send error...
         .done()
 
@@ -522,20 +525,15 @@ Creates and saves a new answer to the DB
 ------------------------------------------
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers', authenticated, (request, response) ->
-        findQuestion(request, request.params)
+        answer = new Answer
+            owner: request.user._id
+            rank: request.body.rank
+            text: request.body.text
+        answer.priority = if canWrite request, request.params.topicId then 1 else 0
+        Q.ninvoke(answer, 'generateId')
+        .then ->
+          findQuestion(request, request.params)
         .then ([topic, file, question]) ->
-          answer = new Answer
-              owner: request.body.owner
-              rank: request.body.rank
-              text: request.body.text
-          # find thepermission for the topic given and if it's w set priority to 1
-          permission = do ->
-            for {code, permission} in request.user.topics when code is topic._id
-              return permission
-          if permission == 'w'
-            answer.priority = 1
-          else
-            answer.priority = 0
           question.answers.addToSet answer
           question.modifiedTime = new Date()
           Q.ninvoke(topic, 'save')
@@ -618,9 +616,11 @@ Creates and saves a new comment to a question to the DB
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/comments', authenticated, (request, response) ->
         comment = new CommentQ
-          owner: request.body.owner
+          owner: request.user._id
           text: request.body.text
-        findQuestion(request, request.params)
+        Q.ninvoke(comment, 'generateId')
+        .then ->
+          findQuestion(request, request.params)
         .then ([topic, file, question]) ->
           question.comments.addToSet comment
           question.modifiedTime = new Date()
@@ -691,9 +691,11 @@ Creates and saves a new comment to an answer to the DB
 
       app.post '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments', authenticated, (request, response) ->
         comment = new CommentA
-          owner: request.body.owner
+          owner: request.user._id
           text: request.body.text
-        findAnswer(request, request.params)
+        Q.ninvoke(comment, 'generateId')
+        .then ->
+          findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
           answer.comments.addToSet comment
           question.modifiedTime = new Date()

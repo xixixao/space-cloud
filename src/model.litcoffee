@@ -7,6 +7,7 @@ Model, as in MVC, is a set of mongoose models for each entity in our database.
     (require './q-each') Q
     mongoose = require 'mongoose'
     (require './mongoose-promise-save') mongoose
+    mongooseIncr = require './mongoose-auto-incr'
 
 Models
 ------
@@ -15,6 +16,7 @@ We define our models, with appropriate schemas,
 
     defineModels = ->
       Schema = mongoose.Schema
+      mongooseIncr.loadAutoIncr mongoose.connection
 
       topicPermission = Schema
         code: {type: String, ref: 'Topic'}
@@ -30,7 +32,7 @@ We define our models, with appropriate schemas,
 
       userSchema = Schema
         name: String
-        _id: {type: String, unique: true, dropDups: true}
+        _id: {type: String, unique: true}
         password: String
         email: String
         facebook: String
@@ -51,7 +53,7 @@ We define our models, with appropriate schemas,
           [comment, parents]
       commentASchema.statics.findShallowByURL = (url) ->
         compile CommentA.findByURL(url)
-      CommentA = mongoose.model('CommentA', commentASchema)
+      CommentA = mongooseIncr.model('CommentA', commentASchema)
 
       answerSchema = Schema
         timestamp: {type: Date, default: Date.now}
@@ -70,7 +72,7 @@ We define our models, with appropriate schemas,
           [answer, parents]
       answerSchema.statics.findShallowByURL = (url) ->
         compile Answer.findByURL(url)
-      Answer = mongoose.model('Answer', answerSchema)
+      Answer = mongooseIncr.model('Answer', answerSchema)
 
       commentQSchema = Schema
         timestamp: {type: Date, default: Date.now}
@@ -86,7 +88,7 @@ We define our models, with appropriate schemas,
           [comment, parents]
       commentQSchema.statics.findShallowByURL = (url) ->
         compile CommentQ.findByURL(url)
-      CommentQ = mongoose.model('CommentQ', commentQSchema)
+      CommentQ = mongooseIncr.model('CommentQ', commentQSchema)
 
       questionSchema = Schema
         createdTime: {type: Date}
@@ -107,7 +109,7 @@ We define our models, with appropriate schemas,
           [question, parents]
       questionSchema.statics.findShallowByURL = (url) ->
         compile Question.findByURL(url)
-      Question = mongoose.model('Question', questionSchema)
+      Question = mongooseIncr.model('Question', questionSchema)
 
       fileSchema = Schema
         _id: {type: String, unique: true} # topic._id-fileid

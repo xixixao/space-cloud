@@ -252,7 +252,6 @@ Adds an event to the DB
           if err?
             return err
           else
-            console.log event, "saved"
             return event
 
 ------------------------------------
@@ -262,10 +261,8 @@ Retrieve all the events from the DB
       app.get '/events', authenticated, (request, response) ->
         getEvents(request.user.topics)
         .then (events) ->
-          console.log events, "events"
           response.send events
         , (error) ->
-          throw error
           response.send 500, error
         .done()
 
@@ -283,8 +280,38 @@ Retrieve all the events from the DB
             Model.named(event.model).findShallowByURL(event.url)
             .then (target) ->
               event.target = target
-              console.log event
               event
+
+
+Retrieve questions related to current user
+
+      app.get '/questions', authenticated, (request, response) ->
+        topicCodes = (code for {code} in request.user.topics)
+        query = Topic.find({})
+        .where('_id').in(topicCodes)
+        .select('name files._id files.name files.questions')
+        .sort('-modifiedTime')
+        .limit(100)
+        all = []
+        Q.ninvoke(query, 'exec')
+        .then (topics) ->
+          Q.map topics, (topic) ->
+            t = topic.shallow()
+            Q.map topic.files, (file) ->
+              f = file.shallow()
+              Q.map file.questions, (question) ->
+                Q.all([question.shallow(), f, t])
+                .then ([question, file, topic]) ->
+                  question.file = file
+                  question.topic = topic
+                  question.url = topicId: topic._id, fileId: file._id, questionId: question._id
+                  all.push question
+        .then ->
+          response.send all
+        , (error) ->
+          throw error
+          response.send 500, error
+        .done()
 
 
 
@@ -510,6 +537,7 @@ Creates and saves a new answer to the DB
           else
             answer.priority = 0
           question.answers.addToSet answer
+          question.modifiedTime = new Date()
           Q.ninvoke(topic, 'save')
           .then ->
             addEvent "Added", "Answer", request.params.topicId,
@@ -542,7 +570,7 @@ Updates an answer
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
           answer.text = request.body.text
-          question.modifiedTime = new Date() 
+          question.modifiedTime = new Date()
           Q.ninvoke(topic, 'save')
           .then ->
             addEvent "Modified", "Answer", request.params.topicId,
@@ -595,6 +623,7 @@ Creates and saves a new comment to a question to the DB
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
           question.comments.addToSet comment
+          question.modifiedTime = new Date()
           Q.ninvoke(topic, 'save')
         .then ->
           addEvent "Added", "CommentQ", request.params.topicId,
@@ -667,6 +696,7 @@ Creates and saves a new comment to an answer to the DB
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
           answer.comments.addToSet comment
+          question.modifiedTime = new Date()
           Q.ninvoke(topic, 'save')
         .then ->
           addEvent "Added", "CommentA", request.params.topicId,

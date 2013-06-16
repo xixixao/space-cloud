@@ -439,7 +439,7 @@ Creates and saves a new question to the DB
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         question = new Question
           owner: request.body.owner
-          filePosition: request.body.filePosition
+          position: request.body.position
           text: request.body.text
           createdTime: new Date()
         findFile(request, request.params)

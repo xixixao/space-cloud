@@ -205,31 +205,62 @@ We connect to our test database and erase it.
         name: "Michal Srb"
         _id: "ms6611"
         password: "admin"
-        email: "ms6611@erial.ac.uk"
+        email: "ms6611@imperial.ac.uk"
         facebook: "xixixao"
         topics: [
-          code: "222"
+          code: "240"
+          permission: 'r'
+        ,
+          code: "120.1"
+          permission: 'r'
+        ,
+          code: "261"
+          permission: 'r'
+        ]
+      user.save()
+      user = new models.User
+        name: "Mark Wheelhouse"
+        _id: "mjw03"
+        password: "admin"
+        email: "mjw03@imperial.ac.uk"
+        facebook: "mark"
+        topics: [
+          code: "240"
+          permission: 'w'
+        ,
+          code: "120.1"
+          permission: 'r'
+        ,
+          code: "261"
           permission: 'w'
         ]
-      Q.ninvoke(user, 'save').then ->
-        topic = new models.Topic
-          name: "Models of Computation"
-          _id: "240"
-          types: ["Notes", "Tutorials", "Solutions"]
-          files: []
-        Q.ninvoke(topic, 'save')
-        topic = new models.Topic
-          name: "Programming I"
-          _id: "120.1"
-          types: ["Notes", "Exercises", "Tests"]
-          files: []
-        Q.ninvoke(topic, 'save')
-        topic = new models.Topic
-          name: "Laboratory 2"
-          _id: "261"
-          types: ["Webapps", "Pintos", "Life", "MAlice"]
-          files: []
-        Q.ninvoke(topic, 'save')
+      user.save()
+      user = new models.User
+        name: "Tony Field"
+        _id: "ajf"
+        password: "admin"
+        email: "ajf@imperial.ac.uk"
+        facebook: "mark"
+        topics: [
+          code: "120.1"
+          permission: 'r'
+        ]
+      user.save()
+      topic = new models.Topic
+        name: "Models of Computation"
+        _id: "240"
+        types: ["Notes", "Tutorials", "Solutions"]
+      topic.save()
+      #topic = new models.Topic
+      #  name: "Programming I"
+      #  _id: "120.1"
+      #  types: ["Notes", "Exercises", "Tests"]
+      #topic.save()
+      #topic = new models.Topic
+      #  name: "Laboratory 2"
+      #  _id: "261"
+      #  types: ["Webapps", "Pintos", "Life", "MAlice"]
+      #topic.save()
       #          "223":
       #            name: "Architecture"
       #            permission: "r"
@@ -248,8 +279,6 @@ We connect to our test database and erase it.
 And execute everything in correct synchronized order. Node will take care of executing this only once.
 
     connect()
-    #wipe()
-    #setTimeout ->
-    #  populate()
-    #, 2000
+
+    #populate()
 

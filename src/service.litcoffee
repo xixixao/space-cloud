@@ -7,7 +7,6 @@ This is the definition of our service, via a RESTful API.
     {canRead, canWrite, authenticated} = require './authentication'
     path = require 'path'
     fs = require 'fs'
-    os = require 'os'
     mkdirp = Q.denodeify require 'mkdirp'
 
     module.exports = (app) ->
@@ -47,7 +46,7 @@ Serving files
 
       app.get '/files/:topicId/:fileName', authenticated, (request, response) ->
         {topicId, fileName} = request.params
-        response.sendFile path.join(__dirname, "files/#{topicId}/#{fileName}"), (err) ->
+        response.sendfile path.join(__dirname, "files/#{topicId}/#{fileName}"), (err) ->
           response.send 404, "File not found"
 
 
@@ -358,18 +357,18 @@ Creates and saves a new file to the topics list of files
         if !canWrite request, request.params.topicId
           return response.send 401, 'User doesnt have write permission'
 
-        topicDir = path.join __dirname, "files/#{request.params.topicId}"
-        filePath = path.join(topicDir, request.body.name)
+
+        topicDir = "files/#{request.params.topicId}/"
+        topicPath = path.join __dirname, topicDir
+        fileSavePath = path.join topicDir, request.body.name
         fileSaved = mkdirp(topicDir)
         .then ->
-          console.log path.join(app.get('uploadDir'), request.body.tmpName)
-          console.log fs.statSync path.join app.get('uploadDir'), request.body.tmpName
-          console.log fs.renameSync path.join(app.get('uploadDir'), request.body.tmpName),
-            filePath
+          fs.renameSync path.join(app.get('uploadDir'), request.body.tmpName),
+            path.join __dirname, fileSavePath
 
         file = new File
           _id: request.body._id
-          path: filePath
+          path: topicDir + request.body.name
           name: request.body.name
           owner: request.user._id
           type: request.body.type
@@ -468,6 +467,7 @@ Creates and saves a new question to the DB
           addEvent "Added", "Question", request.params.topicId,
             fileId: request.params.fileId
             questionId: question._id
+          question = question.toObject()
           question.owner = shallowUser request
           response.send question
         , (error) ->
@@ -562,6 +562,7 @@ Creates and saves a new answer to the DB
               fileId: request.params.fileId
               questionId: request.params.questionId
               answerId: answer._id
+            answer = answer.toObject()
             answer.owner = shallowUser request
             response.send answer
         , (error) ->
@@ -651,6 +652,7 @@ Creates and saves a new comment to a question to the DB
             fileId: request.params.fileId
             questionId: request.params.questionId
             commentId: comment._id
+          comment = comment.toObject()
           comment.owner = shallowUser request
           response.send comment
         , (error) ->
@@ -728,6 +730,7 @@ Creates and saves a new comment to an answer to the DB
             questionId: request.params.questionId
             answerId: request.params.answerId
             commentId: comment._id
+          comment = comment.toObject()
           comment.owner = shallowUser request
           response.send comment
         , (error) ->

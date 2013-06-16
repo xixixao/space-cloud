@@ -197,7 +197,7 @@ Updating user details
 
 
 -----------------------
-Adds a topic to the DB
+Add topic to the DB
 -----------------------
 
       app.post '/topics', (request, response) ->
@@ -211,6 +211,24 @@ Adds a topic to the DB
             response.send err
           else
             response.send topic
+
+Update topic
+
+      app.post '/topics/:topicId', (request, response) ->
+        if !canWrite request, request.params.topicId
+          return response.send 401, 'User doesnt have write permission'
+
+        getTopic(request.params.topicId)
+        .then (topic) ->
+          topic.types = request.body.types
+          console.log topic.types
+          Q.ninvoke topic, 'save'
+        .then (topic) ->
+          console.log topic.types
+          response.send topic
+        , (error) ->
+          response.send 500, error
+        .done()
 
 
 -------------------------------------------
@@ -291,6 +309,9 @@ Retrieve all the events from the DB
             .then (target) ->
               event.target = target
               event
+            , (error) -> null
+        .then (events) ->
+          event for event in events when event?
 
 
 Retrieve questions related to current user
@@ -409,22 +430,19 @@ Retrieves a file from the DB with id code
           response.send error...
         .done()
 
---------------
-Delete a file
---------------
+Delete file
 
       app.delete '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
         findFile(request, request.params)
         .then ([topic, file]) ->
           topic.files.pull file
+          topic.save()
           response.send topic
         , (error) ->
           response.send error...
         .done()
 
----------------
-Updates a file
----------------
+Update file
 
       app.post '/topics/:topicId/files/:fileId', authenticated, (request, response) ->
         findFile(request, request.params)

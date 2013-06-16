@@ -140,32 +140,43 @@ username validation
 
       batchUserData = (request, response) ->
         topicCodes = request.user.topics
-        Q.ninvoke(request.user, 'populate', 'topics.code')
+        events = getEvents(topicCodes)
+        topics = Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->
-          getOwners(user)
-          .then ->
-            user
-        .then (user) ->
-          user = user.toObject()
-          topics = {}
-          for {code, permission} in user.topics
-            code.permission = permission
-            topics[code._id] = objectify code
+          Q.map user.topics, ({code, permission}) ->
+            Q.map code.files, (file) ->
+              file.shallow().then (file) ->
+                file.url = topicId: code._id, fileId: file._id
+                file
+            .then (files) ->
+              code.shallow().then (topic) ->
+                topic.permission = permission
+                topic.files = files
+                topic
+        Q.all([events, topics])
+        .then ([events, topics]) ->
+          user = request.user.toObject()
           user.topics = topics
-          getEvents(topicCodes)
-          .then (events) ->
-            user.events = events
-            response.send user
-          , (error) ->
-            response.send error
-          .done()
+          user.events = events
+          response.send user
+        , (error) ->
+          response.send error
         .done()
+
+data is an alias for /login, when the user is already authenticated. They should return the same data, namely the user
+
+  - user.events, list of all relevant events
+  - user.topics, list of all his topics with permissions assigned to them
+  - user.files, list of all accessible files, for quick search
+
+Here we go (stupid markdown needs this line).
 
       app.post '/login', passport.authenticate('local'), (request, response) ->
         batchUserData request, response
 
       app.get '/data', authenticated, (request, response) ->
         batchUserData request, response
+
 
 
 Updating user details
@@ -436,12 +447,17 @@ Updates a file
 Creates and saves a new question to the DB
 ------------------------------------------
 
+      shallowUser = (request) ->
+        {_id, name} = request.user
+        return {_id, name}
+
       app.post '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         question = new Question
           owner: request.user._id
           position: request.body.position
           text: request.body.text
           createdTime: new Date()
+          modifiedTime: new Date()
         Q.ninvoke(question, 'generateId')
         .then ->
           findFile(request, request.params)
@@ -452,6 +468,7 @@ Creates and saves a new question to the DB
           addEvent "Added", "Question", request.params.topicId,
             fileId: request.params.fileId
             questionId: question._id
+          question.owner = shallowUser request
           response.send question
         , (error) ->
           throw error
@@ -504,7 +521,10 @@ Retrieves a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions', authenticated, (request, response) ->
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
-          response.send file.questions
+          Q.map file.questions, (question) ->
+            question.shallow()
+        .then (questions) ->
+          response.send questions
         , (error) ->
           response.send error...
         .done()
@@ -512,9 +532,9 @@ Retrieves a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId', authenticated, (request, response) ->
         findQuestion(request, request.params)
         .then ([topic, file, question]) ->
-          populateOwner(Question, question)
-          .then (question) ->
-            response.send question
+          populateOwner(Question, 'owner comments.owner answers.owner answers.comments.owner', question)
+        .then (question) ->
+          response.send question
         , (error) ->
           response.send error...
         .done()
@@ -542,6 +562,7 @@ Creates and saves a new answer to the DB
               fileId: request.params.fileId
               questionId: request.params.questionId
               answerId: answer._id
+            answer.owner = shallowUser request
             response.send answer
         , (error) ->
           response.send error...
@@ -602,7 +623,7 @@ Retrieves an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId', authenticated, (request, response) ->
         findAnswer(request, request.params)
         .then ([topic, file, question, answer]) ->
-          populateOwner(Answer, answer)
+          populateOwner(Answer, 'owner comments.owner', answer)
           .then (answer) ->
             response.send answer
         , (error) ->
@@ -630,6 +651,7 @@ Creates and saves a new comment to a question to the DB
             fileId: request.params.fileId
             questionId: request.params.questionId
             commentId: comment._id
+          comment.owner = shallowUser request
           response.send comment
         , (error) ->
           response.send error
@@ -677,7 +699,7 @@ Retrieves a comment from a question from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/comments/:commentId', authenticated, (request, response) ->
         findCommentQ(request, request.params)
         .then ([topic, file, question, comment]) ->
-          populateOwner(CommentQ, comment)
+          populateOwner(CommentQ, 'owner', comment)
           .then (comment) ->
             response.send comment
         , (error) ->
@@ -706,6 +728,7 @@ Creates and saves a new comment to an answer to the DB
             questionId: request.params.questionId
             answerId: request.params.answerId
             commentId: comment._id
+          comment.owner = shallowUser request
           response.send comment
         , (error) ->
           response.send error...
@@ -737,12 +760,12 @@ Updates a comment to an answer
 Retrieves a comment from an answer from the DB with id code
 ------------------------------------------------------------
 
-      populateOwner = (model, type) ->
+      populateOwner = (model, path, type) ->
         Q.ninvoke(
             model
             'populate'
             type
-            path: 'owner'
+            path: path
             select: '_id name'
           )
 
@@ -763,7 +786,7 @@ Retrieves a comment from an answer from the DB with id code
       app.get '/topics/:topicId/files/:fileId/questions/:questionId/answers/:answerId/comments/:commentId', authenticated, (request, response) ->
         findCommentA(request, request.params)
         .then ([topic, file, question, answer, comment]) ->
-          populateOwner(CommentA, comment)
+          populateOwner(CommentA, 'owner', comment)
           .then (comment) ->
             response.send comment
         , (error) ->

@@ -3,7 +3,7 @@ This is the definition of our service, via a RESTful API.
     Q = require 'q'
     (require './q-each') Q
     passport = require("passport")
-    {Topic, User, File, CommentA, CommentQ, Question, Answer, Event} = require './model'
+    {Topic, User, File, CommentA, CommentQ, Question, Answer, Event} = Model = require './model'
     {canRead, canWrite, authenticated} = require './authentication'
     path = require 'path'
     fs = require 'fs'
@@ -15,6 +15,8 @@ This is the definition of our service, via a RESTful API.
 -------------------------------------------------------
 Finds a user with a given login and returns the details
 -------------------------------------------------------
+
+FOLLOWING IS WRONG:
 
       app.get '/users/:username', authenticated, (request, response) ->
         usersFiles(request.params.username)
@@ -240,7 +242,7 @@ Adds a list of topics to the user with login given
 Adds an event to the DB
 ------------------------
 
-      addEvent = (type, model, url, topicCode) ->
+      addEvent = (type, model, topicCode, url) ->
         event = new Event
           model: model
           type: type
@@ -250,6 +252,7 @@ Adds an event to the DB
           if err?
             return err
           else
+            console.log event, "saved"
             return event
 
 ------------------------------------
@@ -259,20 +262,30 @@ Retrieve all the events from the DB
       app.get '/events', authenticated, (request, response) ->
         getEvents(request.user.topics)
         .then (events) ->
+          console.log events, "events"
           response.send events
         , (error) ->
-          response.send error
+          throw error
+          response.send 500, error
+        .done()
 
       getEvents = (topics) ->
         topicCodes = (code for {code} in topics)
-        Q.ninvoke(
-            Event.find({})
-            .where('topicCode').in(topicCodes)
-            .select('timestamp')
-            .select('url')
-            .select('type')
-            .sort('-timestamp')
-          , 'exec')
+        query = Event.find({})
+        .where('topicCode').in(topicCodes)
+        .sort('-timestamp')
+        .limit(100)
+        Q.ninvoke(query, 'exec')
+        .then (events) ->
+          Q.map events, (event, i) ->
+            event = event.toObject()
+            event.url.topicId = event.topicCode
+            Model.named(event.model).findShallowByURL(event.url)
+            .then (target) ->
+              event.target = target
+              console.log event
+              event
+
 
 
 --------------------------------------
@@ -326,12 +339,8 @@ Creates and saves a new file to the topics list of files
         findTopic(request.params)
         .then (topic) ->
           topic.files.addToSet file
-          addEvent(
-            "Added"
-            "File"
-            "topics/#{request.params.topicId}/files/#{file._id}"
-            request.params.topicId
-          )
+          addEvent "Added", "File", request.params.topicId,
+            fileId: file._id
           Q.ninvoke(topic, 'save')
           .then ->
             response.send file
@@ -388,12 +397,8 @@ Updates a file
           file.date = request.body.date
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent(
-              "Modified"
-              "File"
-              "topics/#{request.params.topicId}/files/#{request.params.fileId}"
-              request.params.topicId
-            )
+            addEvent "Modified", "File", request.params.topicId,
+              fileId: request.params.fileId
             response.send file
           , (error) ->
             response.send error
@@ -415,12 +420,9 @@ Creates and saves a new question to the DB
           file.questions.addToSet question
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent(
-            "Added"
-            "Question"
-            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
-            request.params.topicId
-          )
+          addEvent "Added", "Question", request.params.topicId,
+            fileId: request.params.fileId
+            questionId: question._id
           response.send question
         , (error) ->
           response.send error...
@@ -450,12 +452,9 @@ Updates a question
           question.modifiedQuestionTime = new Date() 
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent(
-              "Modified"
-              "Question"
-              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{question._id}"
-              request.params.topicId
-            )
+            addEvent "Modified", "Question", request.params.topicId,
+              fileId: request.params.fileId
+              questionId: question._id
             response.send question
           , (error) ->
             response.send error
@@ -513,12 +512,10 @@ Creates and saves a new answer to the DB
           question.answers.addToSet answer
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent(
-              "Added"
-              "Answer"
-              "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
-              request.params.topicId
-            )
+            addEvent "Added", "Answer", request.params.topicId,
+              fileId: request.params.fileId
+              questionId: request.params.questionId
+              answerId: answer._id
             response.send answer
         , (error) ->
           response.send error...
@@ -548,12 +545,10 @@ Updates an answer
           question.modifiedTime = new Date() 
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent(
-              "Modified"
-              "Answer"
-              "topics/#{topic._id}/files/#{file._id}/questions/#{question._id}/answers/#{answer._id}"
-              request.params.topicId
-            )
+            addEvent "Modified", "Answer", request.params.topicId,
+              fileId: request.params.fileId
+              questionId: request.params.questionId
+              answerId: answer._id
             response.send answer
           , (error) ->
             response.send error
@@ -602,12 +597,10 @@ Creates and saves a new comment to a question to the DB
           question.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent(
-            "Added"
-            "CommentQ"
-            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}"
-            request.params.topicId
-          )
+          addEvent "Added", "CommentQ", request.params.topicId,
+            fileId: request.params.fileId
+            questionId: request.params.questionId
+            commentId: comment._id
           response.send comment
         , (error) ->
           response.send error
@@ -624,12 +617,10 @@ Updates a comment to a question
           question.modifiedTime = new Date() 
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent(
-              "Modified"
-              "CommentQ"
-              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/comments/#{comment._id}"
-              request.params.topicId
-            )
+            addEvent "Modified", "CommentQ", request.params.topicId,
+              fileId: request.params.fileId
+              questionId: request.params.questionId
+              commentId: comment._id
             response.send comment
           , (error) ->
             response.send error
@@ -678,12 +669,11 @@ Creates and saves a new comment to an answer to the DB
           answer.comments.addToSet comment
           Q.ninvoke(topic, 'save')
         .then ->
-          addEvent(
-            "Added"
-            "CommentA"
-            "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
-            request.params.topicId
-          )
+          addEvent "Added", "CommentA", request.params.topicId,
+            fileId: request.params.fileId
+            questionId: request.params.questionId
+            answerId: request.params.answerId
+            commentId: comment._id
           response.send comment
         , (error) ->
           response.send error...
@@ -700,12 +690,11 @@ Updates a comment to an answer
           question.modifiedTime = new Date() 
           Q.ninvoke(topic, 'save')
           .then ->
-            addEvent(
-              "Modified"
-              "CommentA"
-              "topics/#{request.params.topicId}/files/#{request.params.fileId}/questions/#{request.params.questionId}/answers/#{request.params.answerId}/comments/#{comment._id}"
-              request.params.topicId
-            )
+            addEvent "Modified", "CommentA", request.params.topicId,
+              fileId: request.params.fileId
+              questionId: request.params.questionId
+              answerId: request.params.answerId
+              commentId: comment._id
             response.send comment
           , (error) ->
             response.send error

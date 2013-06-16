@@ -22,7 +22,7 @@ We define our models, with appropriate schemas,
 
       eventSchema = Schema
         type: String
-        url: String
+        url: {}
         model: String
         timestamp: {type: Date, default: Date.now}
         topicCode: {type: String, ref: 'Topic'}
@@ -41,6 +41,16 @@ We define our models, with appropriate schemas,
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         text: String
+      commentASchema.methods.shallow = ->
+        shallowify this, CommentA
+      commentASchema.statics.findByURL = (url) ->
+        Answer.findByURL(url)
+        .then ([answer, parents]) ->
+          comment = answer.comments.id url.commentId
+          parents.answer = answer
+          [comment, parents]
+      commentASchema.statics.findShallowByURL = (url) ->
+        compile CommentA.findByURL(url)
       CommentA = mongoose.model('CommentA', commentASchema)
 
       answerSchema = Schema
@@ -50,12 +60,32 @@ We define our models, with appropriate schemas,
         text: String
         votesFor: [{type: String, ref: 'User'}]
         priority: Number
+      answerSchema.methods.shallow = ->
+        shallowify(this, Answer, ['comments'])
+      answerSchema.statics.findByURL = (url) ->
+        Question.findByURL(url)
+        .then ([question, parents]) ->
+          answer = question.answers.id url.answerId
+          parents.question = question
+          [answer, parents]
+      answerSchema.statics.findShallowByURL = (url) ->
+        compile Answer.findByURL(url)
       Answer = mongoose.model('Answer', answerSchema)
 
       commentQSchema = Schema
         timestamp: {type: Date, default: Date.now}
         owner: {type: String, ref: 'User'}
         text: String
+      commentQSchema.methods.shallow = ->
+        shallowify this, CommentQ
+      commentQSchema.statics.findByURL = (url) ->
+        Question.findByURL(url)
+        .then ([question, parents]) ->
+          comment = question.comments.id url.commentId
+          parents.question = question
+          [comment, parents]
+      commentQSchema.statics.findShallowByURL = (url) ->
+        compile CommentQ.findByURL(url)
       CommentQ = mongoose.model('CommentQ', commentQSchema)
 
       questionSchema = Schema
@@ -67,6 +97,16 @@ We define our models, with appropriate schemas,
         answers: [answerSchema]
         comments: [commentQSchema]
         text: String
+      questionSchema.methods.shallow = ->
+        shallowify this, Question, ['answers', 'comments']
+      questionSchema.statics.findByURL = (url) ->
+        File.findByURL(url)
+        .then ([file, parents]) ->
+          question = file.questions.id url.questionId
+          parents.file = file
+          [question, parents]
+      questionSchema.statics.findShallowByURL = (url) ->
+        compile Question.findByURL(url)
       Question = mongoose.model('Question', questionSchema)
 
       fileSchema = Schema
@@ -74,10 +114,17 @@ We define our models, with appropriate schemas,
         path: String
         name: String
         owner: {type: String, ref: 'User'}
-        topicCode: {type: String, ref: 'Topic'}
         questions: [questionSchema]
         type: String
         date: {type: Date}
+      fileSchema.methods.shallow = ->
+        shallowify this, File, ['questions']
+      fileSchema.statics.findByURL = ({topicId, fileId}) ->
+        Topic.findByURL({topicId})
+        .then ([topic]) ->
+          [topic.files.id(fileId), {topic}]
+      fileSchema.statics.findShallowByURL = (url) ->
+        compile File.findByURL(url)
       File = mongoose.model('File', fileSchema)
 
       topicSchema = Schema
@@ -85,6 +132,18 @@ We define our models, with appropriate schemas,
         _id: {type: String, unique: true}
         files: [fileSchema]
         types: [String]
+      topicSchema.methods.shallow = ->
+        Q.when this.toObject
+          transform: (doc, ret) ->
+            delete ret.files
+            delete ret.types
+            ret
+      topicSchema.statics.findByURL = ({topicId}) ->
+        Q.ninvoke(Topic, 'findById', topicId)
+        .then (topic) ->
+          if !topic?
+            throw [404, "topic not found #{topicId}"]
+          [topic]
       Topic = mongoose.model('Topic', topicSchema)
 
       {Topic, User, File, Question, CommentA, CommentQ, Answer, Event}
@@ -92,6 +151,34 @@ We define our models, with appropriate schemas,
 and export them.
 
     module.exports = models = defineModels()
+
+Let service dynamicly choose a model.
+
+    module.exports.named = (name) ->
+      mongoose.model name
+
+Utility to remove tree structure from data and populate owners
+
+    shallowify = (doc, model, dontShow) ->
+      Q.ninvoke(model, 'populate', doc, path: 'owner', select: 'name _id')
+      .then (doc) ->
+        doc.toObject
+          transform: (doc, ret) ->
+            if dontShow?
+              for key in dontShow
+                delete ret[key]
+            ret
+
+Utility which adds shallow copies of parents to the objects
+
+    compile = (promise) ->
+      promise.then ([doc, map]) ->
+        doc.shallow().then (ret) ->
+          Q.map map, (parent, label) ->
+            parent.shallow().then (plain) ->
+              ret[label] = plain
+          .then ->
+            ret
 
 Database setup
 --------------
@@ -132,6 +219,7 @@ We connect to our test database and erase it.
               name: "Introduction and Methods"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
               questions: [
                   owner: "ms6611"
                   text: "I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!! I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!! I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!! I am not sure what this means. Please help me I am lost I need some solutions as fast as you can! please help!!! help!!!"
@@ -170,106 +258,127 @@ We connect to our test database and erase it.
               name: "Uninformed Search"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'informed-search'
               name: "Informed Search"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'adversarial-search'
               name: "Adversarial Search"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'planning-and logic'
               name: "Planning and Logic"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'planning-algorithms'
               name: "Planning Algorithms"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'krr'
               name: "KRR"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'semanticweb'
               name: "SemanticWeb"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'nmr'
               name: "NMR"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'introlearning'
               name: "IntroLearning"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'reinflearning'
               name: "ReinfLearning"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'abdarg'
               name: "AbdArg"
               type: 'Notes'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'tutorial-1'
               name: "Tutorial 1"
               type: 'Tutorials'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'tutorial-2'
               name: "Tutorial 2"
               type: 'Tutorials'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'tutorial-3'
               name: "Tutorial 3"
               type: 'Tutorials'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'tutorial-4'
               name: "Tutorial 4"
               type: 'Tutorials'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'tutorial-5'
               name: "Tutorial 5"
               type: 'Tutorials'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'solution-1'
               name: "Solution 1"
               type: 'Solutions'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'solution-2'
               name: "Solution 2"
               type: 'Solutions'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'solution-3'
               name: "Solution 3"
               type: 'Solutions'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'solution-4'
               name: "Solution 4"
               type: 'Solutions'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
             ,
               _id: 'solution-5'
               name: "Solution 5"
               type: 'Solutions'
               date: new Date Date.UTC(2013, 6, 5)
+              owner: "ms6611"
           ]
         Q.ninvoke(topic, 'save')
       #          "223":

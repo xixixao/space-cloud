@@ -214,141 +214,21 @@ We connect to our test database and erase it.
       Q.ninvoke(user, 'save').then ->
         topic = new models.Topic
           name: "Models of Computation"
-          _id: "222"
+          _id: "240"
           types: ["Notes", "Tutorials", "Solutions"]
-          files: [
-              _id: 'intro'
-              name: "Introduction and Methods"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'uninformed-search'
-              name: "Uninformed Search"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'informed-search'
-              name: "Informed Search"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'adversarial-search'
-              name: "Adversarial Search"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'planning-and logic'
-              name: "Planning and Logic"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'planning-algorithms'
-              name: "Planning Algorithms"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'krr'
-              name: "KRR"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'semanticweb'
-              name: "SemanticWeb"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'nmr'
-              name: "NMR"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'introlearning'
-              name: "IntroLearning"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'reinflearning'
-              name: "ReinfLearning"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'abdarg'
-              name: "AbdArg"
-              type: 'Notes'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'tutorial-1'
-              name: "Tutorial 1"
-              type: 'Tutorials'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'tutorial-2'
-              name: "Tutorial 2"
-              type: 'Tutorials'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'tutorial-3'
-              name: "Tutorial 3"
-              type: 'Tutorials'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'tutorial-4'
-              name: "Tutorial 4"
-              type: 'Tutorials'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'tutorial-5'
-              name: "Tutorial 5"
-              type: 'Tutorials'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'solution-1'
-              name: "Solution 1"
-              type: 'Solutions'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'solution-2'
-              name: "Solution 2"
-              type: 'Solutions'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'solution-3'
-              name: "Solution 3"
-              type: 'Solutions'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'solution-4'
-              name: "Solution 4"
-              type: 'Solutions'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-            ,
-              _id: 'solution-5'
-              name: "Solution 5"
-              type: 'Solutions'
-              date: new Date Date.UTC(2013, 6, 5)
-              owner: "ms6611"
-          ]
+          files: []
+        Q.ninvoke(topic, 'save')
+        topic = new models.Topic
+          name: "Programming I"
+          _id: "120.1"
+          types: ["Notes", "Exercises", "Tests"]
+          files: []
+        Q.ninvoke(topic, 'save')
+        topic = new models.Topic
+          name: "Laboratory 2"
+          _id: "261"
+          types: ["Webapps", "Pintos", "Life", "MAlice"]
+          files: []
         Q.ninvoke(topic, 'save')
       #          "223":
       #            name: "Architecture"

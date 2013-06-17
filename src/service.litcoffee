@@ -176,9 +176,7 @@ data is an alias for /login, when the user is already authenticated. They should
 Here we go (stupid markdown needs this line).
 
       app.post '/login', passport.authenticate('local'), (request, response) ->
-        #batchUserData request, response
-        console.log "wtd"
-        response.send "hex"
+        batchUserData request, response
 
       app.get '/data', authenticated, (request, response) ->
         batchUserData request, response
@@ -388,15 +386,15 @@ Creates and saves a new file to the topics list of files
 
         topicDir = "files/#{request.params.topicId}/"
         topicPath = path.join __dirname, topicDir
-        fileSavePath = path.join topicDir, request.body.name
-        fileSaved = mkdirp(topicDir)
+        fileSavePath = path.join topicDir, request.body.fileName
+        fileSaved = mkdirp(topicPath)
         .then ->
           fs.renameSync path.join(app.get('uploadDir'), request.body.tmpName),
             path.join __dirname, fileSavePath
 
         file = new File
           _id: request.body._id
-          path: topicDir + request.body.name
+          path: topicDir + request.body.fileName
           name: request.body.name
           owner: request.user._id
           type: request.body.type

@@ -112,7 +112,7 @@ We define our models, with appropriate schemas,
       Question = mongooseIncr.model('Question', questionSchema)
 
       fileSchema = Schema
-        _id: {type: String, unique: true} # topic._id-fileid
+        _id: {type: String, unique: true, sparse: true} # topic._id-fileid
         path: String
         name: String
         owner: {type: String, ref: 'User'}
@@ -217,68 +217,65 @@ We connect to our test database and erase it.
           code: "261"
           permission: 'r'
         ]
-      user.save()
-      user = new models.User
-        name: "Mark Wheelhouse"
-        _id: "mjw03"
-        password: "admin"
-        email: "mjw03@imperial.ac.uk"
-        facebook: "mark"
-        topics: [
-          code: "240"
-          permission: 'w'
-        ,
-          code: "120.1"
-          permission: 'r'
-        ,
-          code: "261"
-          permission: 'w'
-        ]
-      user.save()
-      user = new models.User
-        name: "Tony Field"
-        _id: "ajf"
-        password: "admin"
-        email: "ajf@imperial.ac.uk"
-        facebook: "mark"
-        topics: [
-          code: "120.1"
-          permission: 'r'
-        ]
-      user.save()
-      topic = new models.Topic
-        name: "Models of Computation"
-        _id: "240"
-        types: ["Notes", "Tutorials", "Solutions"]
-      topic.save()
-      #topic = new models.Topic
-      #  name: "Programming I"
-      #  _id: "120.1"
-      #  types: ["Notes", "Exercises", "Tests"]
-      #topic.save()
-      #topic = new models.Topic
-      #  name: "Laboratory 2"
-      #  _id: "261"
-      #  types: ["Webapps", "Pintos", "Life", "MAlice"]
-      #topic.save()
-      #          "223":
-      #            name: "Architecture"
-      #            permission: "r"
-      #            types: [
-      #              'Cool notes'
-      #            ]
-      #            files:
-      #              'hello-ronnie':
-      #                name: "Hello ronnie"
-      #                type: 'Cool notes'
-      #              'blabla':
-      #                name: "Blabla"
-      #                type: 'Cool notes'
+      Q.ninvoke(user, 'save').then ->
+        user = new models.User
+          name: "Mark Wheelhouse"
+          _id: "mjw03"
+          password: "admin"
+          email: "mjw03@imperial.ac.uk"
+          facebook: "mark"
+          topics: [
+            code: "240"
+            permission: 'w'
+          ,
+            code: "120.1"
+            permission: 'r'
+          ,
+            code: "261"
+            permission: 'w'
+          ]
+        Q.ninvoke(user, 'save')
+      .then ->
+        user = new models.User
+          name: "Tony Field"
+          _id: "ajf"
+          password: "admin"
+          email: "ajf@imperial.ac.uk"
+          facebook: "mark"
+          topics: [
+            code: "120.1"
+            permission: 'w'
+          ]
+        Q.ninvoke(user, 'save')
+      .then ->
+        topic = new models.Topic
+          name: "Models of Computation"
+          _id: "240"
+          types: ["Notes", "Tutorials", "Solutions"]
+          files: []
+        Q.ninvoke(topic, 'save')
+      .then ->
+        topic = new models.Topic
+          name: "Programming I"
+          _id: "120.1"
+          types: ["Notes", "Exercises", "Tests"]
+          files: []
+        Q.ninvoke(topic, 'save')
+      .then ->
+        topic = new models.Topic
+          name: "Laboratory 2"
+          _id: "261"
+          types: ["Webapps", "Pintos", "Life", "MAlice"]
+          files: []
+        Q.ninvoke(topic, 'save')
+      .done()
+      console.log "Populated"
 
 
 And execute everything in correct synchronized order. Node will take care of executing this only once.
 
     connect()
-
-    #populate()
-
+    #wipe()
+    #setTimeout ->
+    #  #populate()
+    #, 5000

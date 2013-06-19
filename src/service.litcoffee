@@ -139,12 +139,12 @@ username validation
 
       batchUserData = (request, response) ->
         topicCodes = request.user.topics
-        console.log "user", request.user
+        #console.log "user", request.user
         events = getEvents(topicCodes)
-        Topic.find({}, (e, s) -> console.log "topics", s)
+        #Topic.find({}, (e, s) -> console.log "topics", s)
         topics = Q.ninvoke(request.user, 'populate', 'topics.code')
         .then (user) ->
-          console.log "user", user
+          #console.log "user", user
           Q.map user.topics, ({code, permission}) ->
             Q.map code.files, (file) ->
               file.shallow().then (file) ->
@@ -152,14 +152,14 @@ username validation
                 file
             .then (files) ->
               code.shallow().then (topic) ->
-                console.log "topic", topic
+                #console.log "topic", topic
                 topic.permission = permission
                 topic.files = files
                 topic
         Q.all([events, topics])
         .then ([events, topics]) ->
           user = request.user.toObject()
-          console.log events, topics
+          #console.log events, topics
           user.topics = topics
           user.events = events
           response.send user
@@ -226,10 +226,10 @@ Update topic
         getTopic(request.params.topicId)
         .then (topic) ->
           topic.types = request.body.types
-          console.log topic.types
+          #console.log topic.types
           Q.ninvoke topic, 'save'
         .then (topic) ->
-          console.log topic.types
+          #console.log topic.types
           response.send topic
         , (error) ->
           response.send 500, error
